@@ -1,18 +1,18 @@
 import { IsEmail, IsString, IsOptional, IsEnum, MinLength, MaxLength, Matches, IsNotEmpty, IsUUID, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
 import { PasswordMatch } from 'src/common/validators/password-match.validator';
 import { IsEgyptianPhoneNumber } from 'src/common/validators/phone-number.validator';
 import { IsEgyptianNationalId } from 'src/common/validators/egyptian-national-id.validator';
+import { userRoleInfo } from 'src/common/enums/userRole.enum';
 
 export class RegisterInitDto {
   @ApiProperty({ 
-    enum: UserRole, 
-    example: UserRole.PATIENT,
+    enum: userRoleInfo, 
+    example: userRoleInfo.patient,
     description: 'User role selection'
   })
-  @IsEnum(UserRole, { message: 'Role must be either PATIENT, DOCTOR, or ADMIN' })
-  role: UserRole;
+  @IsEnum(userRoleInfo, { message: 'Role must be either PATIENT, DOCTOR, or ADMIN' })
+  role: userRoleInfo;
 }
 
 export class RegisterBasicDto {

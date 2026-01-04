@@ -2,43 +2,34 @@ import { BadRequestException, ConflictException, Injectable, UnauthorizedExcepti
 import { CompleteProfileDto, RegisterBasicDto, RegisterInitDto, RegisterVerifyEmailDto, VerifyOtpDto } from '../dto/auth.dto';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserRole, UserStatus } from '@prisma/client';
 import { OtpProvider } from './otp.provider';
+import { UsersService } from 'src/users/users.service';
+import { userStatusInfo } from 'src/common/enums/userStatus.enum';
+import { userRoleInfo } from 'src/common/enums/userRole.enum';
 
 
 @Injectable()
 export class RegisterProvider {
   constructor(
-    private prisma: PrismaService,
-    private otp: OtpProvider,
+    private readonly prisma: PrismaService,
+    private readonly otp: OtpProvider,
+    private readonly usersService: UsersService,
   ) { }
 
   /**
    * 
    * @param dto RegisterInitDto 
-   * @returns { success: boolean; message: string; data: { tempUserId: string; role: UserRole; status: string } }
+   * @returns { success: boolean; message: string; data: { tempUserId: string; role: userRoleInfo; status: string } }
    */
   async registerInit(dto: RegisterInitDto): Promise<{
     success: boolean;
     message: string;
-    data: { tempUserId: string; role: UserRole; status: string }
+    data: { tempUserId: string; role: string; status: string }
   }> {
     const { role } = dto;
 
     // Create temporary user with just role
-    const tempUser = await this.prisma.user.create({
-      data: {
-        email: `temp_${Date.now()}@temp.com`, // Temporary email
-        password: 'temp_password', // Temporary password
-        firstName: 'Temp',
-        lastName: 'User',
-        role,
-        status: UserStatus.INIT,
-        registrationStep: 0,
-        isActive: false,
-        isProfileComplete: false,
-      },
-    });
+    const tempUser = await this.usersService.createInitialUser(role);
 
     return {
       success: true,
@@ -53,51 +44,40 @@ export class RegisterProvider {
 
   /*Step 2: Register basic info (email, password, name) */
 
-  async registerBasic(dto: RegisterBasicDto): Promise<{
+  async registerBasice(dto: RegisterBasicDto): Promise<{
     message: string;
     data: { userId: string; status: string }
   }> {
-    const { tempUserId, email, password, confirmPassword, firstName, lastName } = dto;
 
     // Validate password confirmation
-    if (password !== confirmPassword) {
+    if (dto.password !== dto.confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
 
     // Check if temp user exists
     const tempUser = await this.prisma.user.findUnique({
-      where: { id: tempUserId },
+      where: { id: dto.tempUserId },
     });
 
-    if (!tempUser || tempUser.status !== UserStatus.INIT) {
+    if (!tempUser || tempUser.status !== userStatusInfo.INIT) {
       throw new BadRequestException('Invalid registration session');
     }
 
     // Check if email already exists
     const existingUser = await this.prisma.user.findFirst({
-      where: { email },
+      where: { email: dto.email },
     });
 
-    if (existingUser && existingUser.id !== tempUserId) {
+    if (existingUser && existingUser.id !== dto.tempUserId) {
       throw new ConflictException('Email already registered');
     }
 
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hash = await this.hashPassword(dto.password);
 
     // Update temp user with real data
-    const updatedUser = await this.prisma.user.update({
-      where: { id: tempUserId },
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        status: UserStatus.PENDING_EMAIL_VERIFICATION,
-        registrationStep: 1,
-      },
-    });
+    const updatedUser = await this.usersService.updateBasicData(dto, hash);
 
     // Generate and send email verification OTP
     await this.otp.generateAndSendOtp(updatedUser.id, 'EMAIL_VERIFICATION');
@@ -128,14 +108,8 @@ export class RegisterProvider {
     }
 
     // Update user status to approved (or keep pending for admin approval)
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: UserStatus.EMAIL_VERIFIED, // Still needs admin approval
-        registrationStep: 2,
-        // Add email verification flag if needed
-      },
-    });
+    await this.usersService.updateUserStatus(userId, userStatusInfo.EMAIL_VERIFIED, 2);
+    
 
     return {
       data: {
@@ -158,47 +132,23 @@ export class RegisterProvider {
     const { phone, nationalId, medicalCardNumber } = dto;
 
     // Get user
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.usersService.getUserOrThrow(userId);
 
-    if (!user || user.status !== UserStatus.EMAIL_VERIFIED) {
-      throw new BadRequestException('Invalid user or email not verified');
+    if (!user || user.status !== userStatusInfo.EMAIL_VERIFIED) {
+      throw new BadRequestException('Invalid registration session');
     }
 
-    // Check if nationalId already exists
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        nationalId,
-        id: { not: userId },
-      },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('National ID already registered');
-    }
-
-    // Update user with profile data
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        phone,
-        nationalId,
-        status: UserStatus.PENDING_ADMIN_APPROVAL,
-        isActive: false,
-        isProfileComplete: true,
-        registrationStep: 3,
-      },
-    });
+    // Check if nationalId already exists and Update user with profile data
+      const updatedUser = await this.usersService.completeAdditionalProfile(userId, nationalId, phone);
 
     // Create role-specific profile
-    if (user.role === UserRole.PATIENT) {
+    if (user.role === userRoleInfo.patient) {
       await this.prisma.patient.create({
         data: {
           userId: user.id,
         },
       });
-    } else if (user.role === UserRole.DOCTOR) {
+    } else if (user.role === userRoleInfo.doctor) {
       // For doctors, we'll need specialization later
       // For now, create basic doctor profile
       await this.prisma.doctor.create({
@@ -217,5 +167,10 @@ export class RegisterProvider {
         status: updatedUser.status,
       },
     };
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt(12);
+    return bcrypt.hash(password, salt);
   }
 }

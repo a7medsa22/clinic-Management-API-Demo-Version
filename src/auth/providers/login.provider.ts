@@ -7,13 +7,15 @@ import { ConfigService } from "@nestjs/config";
 import { TokenProvider } from "./token.provider";
 import { UserWithRelations } from "src/common/utils/auth.type";
 import { Request } from "express";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class LoginProvider {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-    private readonly token: TokenProvider
+    private readonly token: TokenProvider,
+    private readonly usersService: UsersService,
   ) { }
 
   async login(user: UserWithRelations, req: Request): Promise<AuthResponse> {
@@ -58,10 +60,7 @@ export class LoginProvider {
     const refreshToken = await this.token.generateRefreshToken(user.id, deviceInfo);
 
     // Update last login
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { updatedAt: new Date() },
-    });
+    await this.usersService.updateLastActivity(user.id);
 
     return {
       user: {
@@ -82,9 +81,7 @@ export class LoginProvider {
 
   async logout(userId: string): Promise<{ message: string }> {
     // 1. حذف refresh token من DB
-    await this.prisma.user.deleteMany({
-      where: { id: userId },
-    });
+    await this.usersService.deactivateUser(userId, userId, true);
     return { message: 'Logged out successfully' };
   }
 

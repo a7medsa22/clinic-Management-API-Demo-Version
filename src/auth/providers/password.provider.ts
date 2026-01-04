@@ -7,6 +7,7 @@ import { OtpProvider } from './otp.provider';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { log } from 'console';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class PasswordProvider {
@@ -16,22 +17,14 @@ export class PasswordProvider {
     private readonly otp: OtpProvider,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
 
   ) { }
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string; userId: string }> {
     const { email } = dto;
-
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      // Don't reveal if email exists or not for security
-      return {
-        message: 'If an account with this email exists, a reset code has been sent.',
-        userId: '',
-      };
-    }
+    
+    const user = await this.usersService.findByEmail(email);
+    
 
     // Generate and send password reset OTP
     await this.otp.generateAndSendOtp(user.id, 'PASSWORD_RESET');
