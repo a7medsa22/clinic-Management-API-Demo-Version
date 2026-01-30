@@ -149,5 +149,92 @@ describe('MessageService', () => {
       expect(result.isRead).toBe(true);
     });
   });
+  
+  describe('markAllAsRead', () => {
+  it('should throw NotFoundException if chat not found', async () => {
+    (chatService.getChatHeader as jest.Mock).mockResolvedValue(null);
+    await expect(service.markAllAsRead('chatId', 'userId')).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw ForbiddenException if user cannot access chat', async () => {
+    (chatService.getChatHeader as jest.Mock).mockResolvedValue({});
+    (chatService.canAccessChat as jest.Mock).mockReturnValue(false);
+    await expect(service.markAllAsRead('chatId', 'userId')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('should mark all messages as read', async () => {
+    (chatService.getChatHeader as jest.Mock).mockResolvedValue({});
+    (chatService.canAccessChat as jest.Mock).mockReturnValue(true);
+    (prisma.message.updateMany as jest.Mock).mockResolvedValue({ count: 3 });
+
+    const result = await service.markAllAsRead('chatId', 'userId');
+
+    expect(prisma.message.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        chatId: 'chatId',
+        isRead: false,
+        senderId: { not: 'userId' },
+      }),
+      data: expect.objectContaining({
+        isRead: true,
+      }),
+    }));
+    expect(result).toEqual({ message: 'All messages marked as read' });
+  });
+});
+
+describe('deleteMessage', () => {
+  it('should throw NotFoundException if message not found', async () => {
+    (prisma.message.findUnique as jest.Mock).mockResolvedValue(null);
+    await expect(service.deleteMessage('msgId', 'userId')).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw ForbiddenException if user is not sender', async () => {
+    (prisma.message.findUnique as jest.Mock).mockResolvedValue({ id: 'msgId', senderId: 'otherUser', isDeleted: false });
+    await expect(service.deleteMessage('msgId', 'userId')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('should throw BadRequestException if message already deleted', async () => {
+    (prisma.message.findUnique as jest.Mock).mockResolvedValue({ id: 'msgId', senderId: 'userId', isDeleted: true });
+    await expect(service.deleteMessage('msgId', 'userId')).rejects.toThrow(BadRequestException);
+  });
+
+  it('should delete message successfully', async () => {
+    const message = { id: 'msgId', senderId: 'userId', isDeleted: false };
+    (prisma.message.findUnique as jest.Mock).mockResolvedValue(message);
+    (prisma.message.update as jest.Mock).mockResolvedValue({ ...message, isDeleted: true });
+
+    const result = await service.deleteMessage('msgId', 'userId');
+
+    expect(prisma.message.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'msgId' },
+      data: expect.objectContaining({
+        isDeleted: true,
+        content: "This message was deleted",
+        messageType: 'DELETED',
+      }),
+    }));
+    expect(result).toEqual({ message: 'Message deleted successfully' });
+  });
+});
+
+describe('getUnreadCount', () => {
+  it('should return count of unread messages', async () => {
+    (prisma.message.count as jest.Mock).mockResolvedValue(5);
+
+    const result = await service.getUnreadCount('chatId', 'userId');
+
+    expect(prisma.message.count).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        chatId: 'chatId',
+        isRead: false,
+        senderId: { not: 'userId' },
+        isDeleted: false,
+      }),
+    }));
+    expect(result).toBe(5);
+  });
+});
+
 
 });
