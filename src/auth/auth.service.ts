@@ -27,7 +27,7 @@ export class AuthService {
     private readonly otpProvider: OtpProvider,
     private readonly tokenProvider: TokenProvider,
     private readonly googleLoginProvider: GoogleOauth,
-  ) { }
+  ) {}
 
   ///////////////////
   // Registration //

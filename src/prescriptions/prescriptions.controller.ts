@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, ParseBoolPipe, Put, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+  ParseBoolPipe,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { PrescriptionsService } from './prescriptions.service';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -14,7 +27,7 @@ import { Owner } from 'src/auth/decorators/owner.decorator';
 @ApiAuth()
 @Controller('prescriptions')
 export class PrescriptionsController {
- constructor(private readonly prescriptionsService: PrescriptionsService){}
+  constructor(private readonly prescriptionsService: PrescriptionsService) {}
 
   // ===============================================
   // CREATE PRESCRIPTION (Doctor only)
@@ -26,10 +39,16 @@ export class PrescriptionsController {
     summary: 'Create Prescription (Doctor)',
     description: 'Doctor creates a new prescription for a connected patient',
   })
-  @ApiResponse({ status: 201, description: 'Prescription created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Prescription created successfully',
+  })
   @ApiResponse({ status: 404, description: 'Connection not found' })
   @ApiResponse({ status: 403, description: 'Not your patient' })
-  @ApiResponse({ status: 400, description: 'Connection not active or invalid data' })
+  @ApiResponse({
+    status: 400,
+    description: 'Connection not active or invalid data',
+  })
   async createPrescription(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
     @CurrentUser('doctorId') doctorId: string,
@@ -47,18 +66,22 @@ export class PrescriptionsController {
   // ===============================================
 
   @Get('connections/:connectionId')
-  @Roles(UserRole.DOCTOR,UserRole.PATIENT)
+  @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Get Connection Prescriptions',
-    description: 'Get all prescriptions for a specific doctor-patient connection',
+    description:
+      'Get all prescriptions for a specific doctor-patient connection',
   })
-  @ApiResponse({ status: 200, description: 'Prescriptions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Prescriptions retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Connection not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
   async getConnectionPrescriptions(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
     @CurrentUser('sub') userId: string,
-    @CurrentUser('role') userRole:UserRole,
+    @CurrentUser('role') userRole: UserRole,
   ) {
     return this.prescriptionsService.getConnectionPrescriptions(
       connectionId,
@@ -130,7 +153,8 @@ export class PrescriptionsController {
   })
   async getMyPrescriptions(
     @CurrentUser('patientId') patientId: string,
-    @Query('isActive', new ParseBoolPipe({ optional: true })) isActive?: boolean,
+    @Query('isActive', new ParseBoolPipe({ optional: true }))
+    isActive?: boolean,
   ) {
     return this.prescriptionsService.getMyPrescriptions(patientId, isActive);
   }
@@ -141,7 +165,10 @@ export class PrescriptionsController {
     summary: 'Get Patient Prescriptions (Doctor)',
     description: 'Doctor gets all prescriptions for a specific patient',
   })
-  @ApiResponse({ status: 200, description: 'Prescriptions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Prescriptions retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'No connection with this patient' })
   async getPatientPrescriptions(
     @Param('patientId', ParseUUIDPipe) patientId: string,
@@ -160,7 +187,10 @@ export class PrescriptionsController {
     summary: 'Get Prescription by ID',
     description: 'Get detailed information about a specific prescription',
   })
-  @ApiResponse({ status: 200, description: 'Prescription retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Prescription retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Prescription not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
   async getPrescription(
@@ -168,7 +198,11 @@ export class PrescriptionsController {
     @CurrentUser('sub') userId: string,
     @CurrentUser('role') userRole: UserRole,
   ) {
-    return this.prescriptionsService.getPrescription(prescriptionId, userId, userRole);
+    return this.prescriptionsService.getPrescription(
+      prescriptionId,
+      userId,
+      userRole,
+    );
   }
 
   // ===============================================
@@ -183,7 +217,10 @@ export class PrescriptionsController {
     summary: 'Update Prescription (Doctor)',
     description: 'Doctor updates an existing prescription',
   })
-  @ApiResponse({ status: 200, description: 'Prescription updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Prescription updated successfully',
+  })
   @ApiResponse({ status: 404, description: 'Prescription not found' })
   @ApiResponse({ status: 403, description: 'Not your prescription' })
   async updatePrescription(
@@ -211,12 +248,11 @@ export class PrescriptionsController {
   @ApiResponse({ status: 403, description: 'Not your prescription' })
   async deactivatePrescription(
     @Param('id', ParseUUIDPipe) prescriptionId: string,
-    @CurrentUser('doctorId') doctorId:string,
+    @CurrentUser('doctorId') doctorId: string,
   ) {
     return this.prescriptionsService.deactivatePrescription(
       prescriptionId,
       doctorId,
     );
   }
-  
 }

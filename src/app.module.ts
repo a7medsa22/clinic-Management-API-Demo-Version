@@ -14,7 +14,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { UserCacheService } from './common/cache/user-cache.service';
 
-
 @Module({
   imports: [
     // Configuration
@@ -40,7 +39,7 @@ import { UserCacheService } from './common/cache/user-cache.service';
         },
         {
           name: 'upload',
-          ttl: 60 * 60 * 1000, // 1 hour  
+          ttl: 60 * 60 * 1000, // 1 hour
           limit: 10, // 10 file uploads per hour
         },
       ],
@@ -56,10 +55,10 @@ import { UserCacheService } from './common/cache/user-cache.service';
     PrescriptionsModule,
     QrModule,
     NotificationsModule,
-    ChatModule
+    ChatModule,
   ],
- providers: [
-  {
+  providers: [
+    {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
     },

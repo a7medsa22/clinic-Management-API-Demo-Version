@@ -4,9 +4,9 @@ import { PrescriptionsController } from './prescriptions.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports:[PrismaModule],
+  imports: [PrismaModule],
   controllers: [PrescriptionsController],
   providers: [PrescriptionsService],
-  exports:[PrescriptionsService]
+  exports: [PrescriptionsService],
 })
 export class PrescriptionsModule {}

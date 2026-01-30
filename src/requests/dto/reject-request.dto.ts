@@ -2,9 +2,9 @@ import { IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RejectRequestDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Currently not accepting new patients',
-    description: 'Reason for rejection (will be sent to patient)'
+    description: 'Reason for rejection (will be sent to patient)',
   })
   @IsString()
   @MinLength(10, { message: 'Rejection reason must be at least 10 characters' })

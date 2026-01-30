@@ -1,13 +1,13 @@
-import { Request } from "express";
-import { JwtPayload } from "./jwt-payload.interface";
+import { Request } from 'express';
+import { JwtPayload } from './jwt-payload.interface';
 
 export interface AuthUser extends JwtPayload {
-  profileAvg?: any; 
+  profileAvg?: any;
 }
 export interface AuthUserforRes extends AuthUser {
-  firstName:string,
-  lastName:string,
+  firstName: string;
+  lastName: string;
 }
-export interface RequestWithUser extends Request{
-    user:AuthUser;
+export interface RequestWithUser extends Request {
+  user: AuthUser;
 }

@@ -12,7 +12,7 @@ export class RedisService implements OnModuleDestroy {
 
   async get<T>(key: string): Promise<T | null> {
     const data = await this.client.get(key);
-    return data ? JSON.parse(data) as T : null;
+    return data ? (JSON.parse(data) as T) : null;
   }
 
   async set(key: string, value: any, ttlSeconds?: number) {

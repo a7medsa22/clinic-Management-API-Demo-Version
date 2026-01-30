@@ -16,24 +16,32 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleOauth } from './providers/login-google.provider';
 
 @Module({
-  imports:[
-    PassportModule.register({defaultStrategy:'jwt'}),
-     JwtModule.registerAsync({
-      useFactory: async (config:ConfigService)=>
-    ({
-      secret:config.get('JWT_SECRET'),
-      signOptions:{expiresIn:config.get('JWT_EXPIRES_IN')},
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      useFactory: async (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET'),
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') },
+      }),
+      inject: [ConfigService],
     }),
-    inject:[ConfigService]
-     }),
-     forwardRef(() => UsersModule),
-     EmailModule,
-     JwtModule,
-     PrismaModule,
-     ConfigModule
+    forwardRef(() => UsersModule),
+    EmailModule,
+    JwtModule,
+    PrismaModule,
+    ConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService,JwtStrategy,LoginProvider,RegisterProvider,OtpProvider,PasswordProvider,TokenProvider,GoogleOauth],
-  exports:[AuthService,JwtModule,PassportModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LoginProvider,
+    RegisterProvider,
+    OtpProvider,
+    PasswordProvider,
+    TokenProvider,
+    GoogleOauth,
+  ],
+  exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

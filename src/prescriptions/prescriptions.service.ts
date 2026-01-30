@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -6,90 +10,100 @@ import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class PrescriptionsService {
-  constructor(private prisma:PrismaService){}
+  constructor(private prisma: PrismaService) {}
 
-  async createPrescription(doctorId:string,connectionId:string,dto: CreatePrescriptionDto) {
-  
+  async createPrescription(
+    doctorId: string,
+    connectionId: string,
+    dto: CreatePrescriptionDto,
+  ) {
     const connection = await this.prisma.doctorPatientConnection.findUnique({
-      where:{id:connectionId},
-      include:{
+      where: { id: connectionId },
+      include: {
         ...this.patientInclude,
-      }
+      },
     });
 
-    if(!connection){
+    if (!connection) {
       throw new NotFoundException('Connection not found');
     }
 
-    if(connection.doctorId !== doctorId){
-      throw new ForbiddenException('You can only prescribe for your own patients');
+    if (connection.doctorId !== doctorId) {
+      throw new ForbiddenException(
+        'You can only prescribe for your own patients',
+      );
     }
 
-    if(connection.status !== 'ACTIVE'){
-      throw new ForbiddenException('You can only prescribe for active connections');
+    if (connection.status !== 'ACTIVE') {
+      throw new ForbiddenException(
+        'You can only prescribe for active connections',
+      );
     }
 
     const prescription = await this.prisma.prescription.create({
-      data:{
-       doctorId,
-       connectionId,
-       patientId:connection.patientId,
-       medications:JSON.stringify(dto.medications),
-       notes:dto.notes,
-       prescribedAt:new Date(),
-       updateAt:new Date(),
+      data: {
+        doctorId,
+        connectionId,
+        patientId: connection.patientId,
+        medications: JSON.stringify(dto.medications),
+        notes: dto.notes,
+        prescribedAt: new Date(),
+        updateAt: new Date(),
       },
-      include:{
+      include: {
         ...this.doctorInclude,
         ...this.patientInclude,
-      }
+      },
     });
 
-    
     // TODO: Send notification to patient
     // await this.notificationsService.sendNewPrescriptionNotification(connection.patient.userId, prescription);
-   
+
     return {
       message: 'Prescription created successfully',
       prescription,
-    }
-
+    };
   }
-  
-    // Get all prescriptions for a connection
-    async getConnectionPrescriptions(connectionId: string,userId:string,userRole:UserRole) {
 
-    const connection = await this.prisma.doctorPatientConnection.findUniqueOrThrow({
-      where:{id:connectionId},
-      include:{
-       doctor:{include:{user:true}},
-       patient:{include:{user:true}}
-      }
-    });
+  // Get all prescriptions for a connection
+  async getConnectionPrescriptions(
+    connectionId: string,
+    userId: string,
+    userRole: UserRole,
+  ) {
+    const connection =
+      await this.prisma.doctorPatientConnection.findUniqueOrThrow({
+        where: { id: connectionId },
+        include: {
+          doctor: { include: { user: true } },
+          patient: { include: { user: true } },
+        },
+      });
 
-        // Check access permission
-    const hasAccess = (userRole === 'DOCTOR' && connection.doctor.userId === userId) ||
-                      (userRole === 'PATIENT' && connection.patient.userId === userId);
-    if(!hasAccess){
+    // Check access permission
+    const hasAccess =
+      (userRole === 'DOCTOR' && connection.doctor.userId === userId) ||
+      (userRole === 'PATIENT' && connection.patient.userId === userId);
+    if (!hasAccess) {
       throw new ForbiddenException('You do not have access to this connection');
     }
 
-      const prescriptions = await this.prisma.prescription.findMany({
-        where: { connectionId },
-        include: {
-          ...this.doctorInclude,
-        },
-        orderBy:{
-          prescribedAt:'desc'
-        }
-      });
-      return prescriptions;
-    }
-      // Get all patient prescriptions (Patient view)
-  async getMyPrescriptions(patientId:string,isActive?:boolean) {
+    const prescriptions = await this.prisma.prescription.findMany({
+      where: { connectionId },
+      include: {
+        ...this.doctorInclude,
+      },
+      orderBy: {
+        prescribedAt: 'desc',
+      },
+    });
+    return prescriptions;
+  }
+  // Get all patient prescriptions (Patient view)
+  async getMyPrescriptions(patientId: string, isActive?: boolean) {
     const where: any = { patientId };
 
-      if (isActive !== undefined) {
+    if (isActive !== undefined) {
       where.isActive = isActive;
     }
 
@@ -97,18 +111,18 @@ export class PrescriptionsService {
       where,
       include: {
         ...this.doctorInclude,
-        connection:{
-          select:{id:true , status:true}
-        }
+        connection: {
+          select: { id: true, status: true },
+        },
       },
-      orderBy:{
-        prescribedAt:'desc'
-      }
+      orderBy: {
+        prescribedAt: 'desc',
+      },
     });
     return prescriptions;
   }
- async getPatientPrescriptions(doctorId:string,patientId:string){
-  // Verify connection exists
+  async getPatientPrescriptions(doctorId: string, patientId: string) {
+    // Verify connection exists
     const connection = await this.prisma.doctorPatientConnection.findUnique({
       where: {
         doctorId_patientId: {
@@ -131,32 +145,37 @@ export class PrescriptionsService {
         prescribedAt: 'desc',
       },
     });
- }
+  }
 
   // ===============================================
   // GET SINGLE PRESCRIPTION
   // ===============================================
-  async getPrescription( prescriptionId: string,userId: string,userRole: UserRole) {
-
-   const prescription = await this.prisma.prescription.findUnique({
-    where:{id:prescriptionId},
-    include:{
-      ...this.doctorInclude,
-      ...this.patientInclude,
-    }
-   })
-   if(!prescription){
+  async getPrescription(
+    prescriptionId: string,
+    userId: string,
+    userRole: UserRole,
+  ) {
+    const prescription = await this.prisma.prescription.findUnique({
+      where: { id: prescriptionId },
+      include: {
+        ...this.doctorInclude,
+        ...this.patientInclude,
+      },
+    });
+    if (!prescription) {
       throw new NotFoundException('Prescription not found');
-   }
-    const hasAccess = (userRole === 'DOCTOR' && prescription.doctor.userId === userId) ||
-                      (userRole === 'PATIENT' && prescription.patient.userId === userId);
-    if(!hasAccess){
-      throw new ForbiddenException('You do not have access to this prescription');
+    }
+    const hasAccess =
+      (userRole === 'DOCTOR' && prescription.doctor.userId === userId) ||
+      (userRole === 'PATIENT' && prescription.patient.userId === userId);
+    if (!hasAccess) {
+      throw new ForbiddenException(
+        'You do not have access to this prescription',
+      );
     }
     return prescription;
-
   }
-  
+
   // ===============================================
   // UPDATE PRESCRIPTION (Doctor only)
   // ===============================================
@@ -174,13 +193,17 @@ export class PrescriptionsService {
     }
 
     if (prescription.doctorId !== doctorId) {
-      throw new ForbiddenException('You can only update your own prescriptions');
+      throw new ForbiddenException(
+        'You can only update your own prescriptions',
+      );
     }
 
     return this.prisma.prescription.update({
       where: { id: prescriptionId },
       data: {
-        medications: dto.medications ? JSON.stringify(dto.medications) : undefined,
+        medications: dto.medications
+          ? JSON.stringify(dto.medications)
+          : undefined,
         notes: dto.notes,
         isActive: dto.isActive,
       },
@@ -190,7 +213,7 @@ export class PrescriptionsService {
     });
   }
 
- // ===============================================
+  // ===============================================
   // DEACTIVATE PRESCRIPTION (Doctor only)
   // ===============================================
   async deactivatePrescription(prescriptionId: string, doctorId: string) {
@@ -203,7 +226,9 @@ export class PrescriptionsService {
     }
 
     if (prescription.doctorId !== doctorId) {
-      throw new ForbiddenException('You can only deactivate your own prescriptions');
+      throw new ForbiddenException(
+        'You can only deactivate your own prescriptions',
+      );
     }
 
     return this.prisma.prescription.update({
@@ -212,7 +237,7 @@ export class PrescriptionsService {
     });
   }
 
-   // ===============================================
+  // ===============================================
   // GET ACTIVE PRESCRIPTIONS COUNT
   // ===============================================
   async getActivePrescriptionsCount(patientId: string): Promise<number> {
@@ -224,16 +249,15 @@ export class PrescriptionsService {
     });
   }
 
-
-   private readonly patientInclude = {
+  private readonly patientInclude = {
     patient: {
       include: {
         user: {
           select: {
             id: true,
             firstName: true,
-            lastName: true
-        },
+            lastName: true,
+          },
         },
       },
     },
@@ -253,5 +277,4 @@ export class PrescriptionsService {
       },
     },
   };
-
 }

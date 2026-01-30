@@ -38,7 +38,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // ===============================================
   // REGISTRATION WITH EMAIL VERIFICATION
@@ -221,7 +221,7 @@ export class AuthController {
   @Get('google')
   @Public()
   @UseGuards(GoogleAuthGuard)
-  async googleAuth():Promise<void> {
+  async googleAuth(): Promise<void> {
     // This endpoint is used for initiating Google OAuth2 flow
   }
 
@@ -283,8 +283,7 @@ export class AuthController {
   })
   async googleLogin(@Req() req) {
     return this.authService.googleLogin(req.user, req);
-  } 
-
+  }
 
   // ===============================================
   // FORGOT PASSWORD WITH OTP

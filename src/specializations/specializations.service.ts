@@ -1,22 +1,26 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSpecializationDto } from './dto/create-specialization.dto';
 import { UpdateSpecializationDto } from './dto/update-specialization.dto';
 
 @Injectable()
 export class SpecializationsService {
-    constructor(private prisma: PrismaService){}
+  constructor(private prisma: PrismaService) {}
 
-    async create(dto:CreateSpecializationDto){
-        const{name,nameAr,description} = dto 
-        const existingSpecialization = await this.prisma.specialization.findUnique({
-            where:{name}
-        })
-        if(existingSpecialization){
+  async create(dto: CreateSpecializationDto) {
+    const { name, nameAr, description } = dto;
+    const existingSpecialization = await this.prisma.specialization.findUnique({
+      where: { name },
+    });
+    if (existingSpecialization) {
       throw new ConflictException('Specialization already exists');
-        }
+    }
 
-         return this.prisma.specialization.create({
+    return this.prisma.specialization.create({
       data: {
         name,
         nameAr,
@@ -25,51 +29,52 @@ export class SpecializationsService {
     });
   }
 
-  async findAll(){
+  async findAll() {
     return this.prisma.specialization.findMany({
-        include:{
-            _count:{select:{doctors:true}}
-        },
-        orderBy:{name:'asc'}
-    })
+      include: {
+        _count: { select: { doctors: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
   }
 
-  async findOne(id:string){
+  async findOne(id: string) {
     const specialization = await this.prisma.specialization.findUnique({
-        where: { id },
-        include: {
+      where: { id },
+      include: {
         doctors: {
-            where: {
+          where: {
             user: {
-                status: 'ACTIVE',
-                isActive: true,
-            },},
-            include: {
+              status: 'ACTIVE',
+              isActive: true,
+            },
+          },
+          include: {
             user: {
-                select: {
+              select: {
                 id: true,
                 firstName: true,
                 lastName: true,
                 email: true,
                 phone: true,
-                },
+              },
             },
-            },
+          },
         },
         _count: {
-            select: {
+          select: {
             doctors: true,
-            },
+          },
         },
-        },
+      },
     });
-        if (!specialization) {
-        throw new NotFoundException('Specialization not found');
+    if (!specialization) {
+      throw new NotFoundException('Specialization not found');
     }
 
     return specialization;
-}
-     async update(id: string, dto: UpdateSpecializationDto) {
+  }
+  async update(id: string, dto: UpdateSpecializationDto) {
     const specialization = await this.prisma.specialization.findUnique({
       where: { id },
     });
@@ -80,9 +85,10 @@ export class SpecializationsService {
 
     // Check for name conflicts if name is being updated
     if (dto.name && dto.name !== specialization.name) {
-      const existingSpecialization = await this.prisma.specialization.findUnique({
-        where: { name: dto.name },
-      });
+      const existingSpecialization =
+        await this.prisma.specialization.findUnique({
+          where: { name: dto.name },
+        });
 
       if (existingSpecialization) {
         throw new ConflictException('Specialization name already exists');

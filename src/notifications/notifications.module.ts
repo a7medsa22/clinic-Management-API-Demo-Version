@@ -5,9 +5,9 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
-  imports:[PrismaModule,ChatModule],
+  imports: [PrismaModule, ChatModule],
   controllers: [NotificationsController],
   providers: [NotificationsService],
-  exports:[NotificationsService],
+  exports: [NotificationsService],
 })
 export class NotificationsModule {}

@@ -1,8 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsDateString, IsEnum, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
-
-
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 // UpdateProfileDto
 export class UpdateProfileDto {
@@ -30,7 +36,9 @@ export class UpdateProfileDto {
 
   @ApiProperty({ example: 'Male', required: false })
   @IsOptional()
-  @IsEnum(['Male', 'Female'], { message: 'Gender must be either Male or Female' })
+  @IsEnum(['Male', 'Female'], {
+    message: 'Gender must be either Male or Female',
+  })
   gender?: string;
 
   @ApiProperty({ example: '123 Main Street, Cairo, Egypt', required: false })
@@ -54,7 +62,10 @@ export class UpdateProfileDto {
   allergies?: string;
 
   // Doctor-specific fields
-  @ApiProperty({ example: 'Experienced cardiologist with 10+ years of practice.', required: false })
+  @ApiProperty({
+    example: 'Experienced cardiologist with 10+ years of practice.',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   bio?: string;
@@ -64,19 +75,22 @@ export class UpdateProfileDto {
   @IsNumber()
   experience?: number;
 
-  @ApiProperty({ example: 500.00, required: false })
+  @ApiProperty({ example: 500.0, required: false })
   @IsOptional()
   @Transform(({ value }) => parseFloat(value))
   consultationFee?: number;
 
-  @ApiProperty({ example: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'], required: false })
+  @ApiProperty({
+    example: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
+    required: false,
+  })
   @IsOptional()
   @IsArray()
   workingDays?: string[];
 
-  @ApiProperty({ 
-    example: { start: '09:00', end: '17:00' }, 
-    required: false 
+  @ApiProperty({
+    example: { start: '09:00', end: '17:00' },
+    required: false,
   })
   @IsOptional()
   @IsObject()
@@ -120,8 +134,3 @@ export class UserStatsResponseDto {
     admins: number;
   };
 }
-
-
-
-
-

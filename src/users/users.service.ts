@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -10,22 +15,21 @@ import { RegisterBasicDto } from 'src/auth/dto/auth.dto';
 import { UserStatePattern } from './patterns/user-state.pattern';
 export type UserWithoutPassword = Omit<User, 'password'>;
 
-
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // ---------logics
   async findByEmail(email: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { email },
-        select: this.baseUserInfo
-  });
+      select: this.baseUserInfo,
+    });
   }
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-       select: this.baseUserInfo,
+      select: this.baseUserInfo,
     });
   }
 
@@ -44,7 +48,11 @@ export class UsersService {
     };
   }
 
-  async updateUserStatus(userId: string, status: userStatusInfo, registrationStep?: number) {
+  async updateUserStatus(
+    userId: string,
+    status: userStatusInfo,
+    registrationStep?: number,
+  ) {
     await this.getUserOrThrow(userId);
     return this.prisma.user.update({
       where: { id: userId },
@@ -74,7 +82,11 @@ export class UsersService {
     });
   }
 
-  async completeAdditionalProfile(userId: string, nationalId: string, phone: string) {
+  async completeAdditionalProfile(
+    userId: string,
+    nationalId: string,
+    phone: string,
+  ) {
     const exist = await this.prisma.user.findFirst({
       where: {
         nationalId,
@@ -125,8 +137,6 @@ export class UsersService {
     return this.getProfile(userId);
   }
 
-
-
   async getUserStats() {
     const [total, active, complete, patients, doctors, admins] =
       await this.prisma.$transaction([
@@ -160,19 +170,22 @@ export class UsersService {
         registrationStep: 0,
         isActive: false,
         isProfileComplete: false,
-      }
+      },
     });
     return newUser;
   }
   async getUserRegistrationStatus(userId: string) {
     const user = await this.getUserOrThrow(userId);
 
-    const nextStep = UserStatePattern.getNextRegistrationStep(user.status as userStatusInfo);
+    const nextStep = UserStatePattern.getNextRegistrationStep(
+      user.status as userStatusInfo,
+    );
 
     return {
       user,
       nextStep,
-      isComplete: user.status === userStatusInfo.ACTIVE && user.isProfileComplete,
+      isComplete:
+        user.status === userStatusInfo.ACTIVE && user.isProfileComplete,
     };
   }
 
@@ -182,7 +195,9 @@ export class UsersService {
     const { page = 1, limit = 10, role, status, search } = query;
     const skip = (page - 1) * limit;
     const where: any = {
-      ...(role && { role }), ...(status && { status }), ...(search && {
+      ...(role && { role }),
+      ...(status && { status }),
+      ...(search && {
         OR: [
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
@@ -215,12 +230,16 @@ export class UsersService {
     };
   }
 
-  async deactivateUser(userId: string, currentUserId: string, privacyCheck: boolean = false) {
-    if(!privacyCheck) {
-    if (userId === currentUserId) { 
-      throw new ForbiddenException('Cannot deactivate your own account');
+  async deactivateUser(
+    userId: string,
+    currentUserId: string,
+    privacyCheck: boolean = false,
+  ) {
+    if (!privacyCheck) {
+      if (userId === currentUserId) {
+        throw new ForbiddenException('Cannot deactivate your own account');
+      }
     }
-  }
     await this.getUserOrThrow(userId);
 
     await this.prisma.user.update({
@@ -229,7 +248,7 @@ export class UsersService {
     });
 
     return {
-    message: 'User deactivated successfully'
+      message: 'User deactivated successfully',
     };
   }
 
@@ -240,17 +259,19 @@ export class UsersService {
       where: { id: userId },
       data: {
         isActive: true,
-        status: user.isProfileComplete ? userStatusInfo.ACTIVE : userStatusInfo.EMAIL_VERIFIED,
+        status: user.isProfileComplete
+          ? userStatusInfo.ACTIVE
+          : userStatusInfo.EMAIL_VERIFIED,
       },
     });
-  }  
+  }
   async getUserOrThrow(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  // --- Common Helpers 
+  // --- Common Helpers
   private readonly baseUserInfo = {
     id: true,
     email: true,
@@ -264,14 +285,12 @@ export class UsersService {
     isProfileComplete: true,
     registrationStep: true,
     patient: { select: { id: true } },
-        doctor: {
-          select: { id: true, specialization: true }
-        },
+    doctor: {
+      select: { id: true, specialization: true },
+    },
     createdAt: true,
     updatedAt: true,
   };
 
-
   //state pattern for registration steps
-  
 }

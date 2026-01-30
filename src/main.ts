@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import helmet from 'helmet'
-import compression from 'compression'
+import helmet from 'helmet';
+import compression from 'compression';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -11,30 +11,30 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const config = app.get(ConfigService)
- 
+  const config = app.get(ConfigService);
+
   // Security
-  app.use(helmet())
-  app.use(compression())
+  app.use(helmet());
+  app.use(compression());
 
   // CORS
   app.enableCors({
     origin: config.get('CORS_ORIGIN').split(',') ?? ['http://localhost:3000'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-  })
+  });
 
   // API Versioning
   app.enableVersioning({
-    type:VersioningType.URI,
-    defaultVersion:'1',
-  })
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
 
-    // Global Prefix
+  // Global Prefix
   let apiPrefix = config.get('API_PREFIX') ?? 'api';
   apiPrefix = apiPrefix.replace(/\/v\d+$/i, '');
-  app.setGlobalPrefix(apiPrefix)
+  app.setGlobalPrefix(apiPrefix);
 
   // Global Validation Pipe
   app.useGlobalPipes(
@@ -46,16 +46,17 @@ async function bootstrap() {
       skipMissingProperties: false,
       skipNullProperties: false,
       skipUndefinedProperties: false,
-    })
-  )
+    }),
+  );
 
-    // Global Filters & Interceptors
-    app.useGlobalFilters(new HttpExceptionFilter());
-    app.useGlobalInterceptors(new LoggingInterceptor() , new TransformInterceptor());
+  // Global Filters & Interceptors
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+  );
 
-
-
-   // Swagger Documentation
+  // Swagger Documentation
   if (config.get('NODE_ENV') === 'development') {
     const config = new DocumentBuilder()
       .setTitle('MediSync API')
@@ -63,7 +64,10 @@ async function bootstrap() {
       .setVersion('1.0')
       .addTag('Authentication', 'User authentication endpoints')
       .addTag('Users', 'User management endpoints')
-      .addTag('Requests & Connections', 'Request a connection management endpoints')
+      .addTag(
+        'Requests & Connections',
+        'Request a connection management endpoints',
+      )
       .addTag('Prescriptions', 'Prescription management endpoints')
       .addTag('QR Code', 'Qr code endpoints')
       .addTag('Specializations', 'Specialization management endpoints')
@@ -79,7 +83,7 @@ async function bootstrap() {
         'JWT-auth',
       )
       .build();
-     
+
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup(`${apiPrefix}/docs`, app, document, {
       swaggerOptions: {
@@ -88,10 +92,10 @@ async function bootstrap() {
     });
   }
 
-   // Start Server
+  // Start Server
   const port = config.get('PORT', 3000);
   await app.listen(port);
-  
+
   console.log(`
   MediSync Backend Server Started!
   Server running on: http://localhost:${port}

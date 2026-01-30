@@ -1,53 +1,53 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { QrTokenType } from "./generate-qr.dto";
+import { ApiProperty } from '@nestjs/swagger';
+import { QrTokenType } from './generate-qr.dto';
 
 export class QrTokenResponseDto {
   @ApiProperty({
-    description: 'QR Token ID'
+    description: 'QR Token ID',
   })
   id: string;
 
   @ApiProperty({
-    description: 'QR token string'      
+    description: 'QR token string',
   })
   token: string;
 
   @ApiProperty({
     description: 'QR Code as Base64 image',
-    example: 'data:image/png;base64,iVBORw0KG...'
+    example: 'data:image/png;base64,iVBORw0KG...',
   })
   qrCodeImage: string;
 
   @ApiProperty({
     enum: QrTokenType,
-    description: 'type of the QR token'
+    description: 'type of the QR token',
   })
   type: QrTokenType;
 
   @ApiProperty({
-    description: 'time of creation'
+    description: 'time of creation',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'expiration time'
+    description: 'expiration time',
   })
   expiresAt: Date;
 
   @ApiProperty({
-    description: 'remaining minutes until expiration'
+    description: 'remaining minutes until expiration',
   })
   remainingMinutes: number;
 
   @ApiProperty({
     description: 'whether the token has been used',
-    default: false
+    default: false,
   })
   isUsed: boolean;
 
   @ApiProperty({
     description: 'doctor information',
-    required: false
+    required: false,
   })
   doctor?: {
     id: string;
@@ -56,15 +56,14 @@ export class QrTokenResponseDto {
   };
 }
 
-
 export class QrConnectionResponseDto {
   @ApiProperty({
-    description: 'new connection ID'
+    description: 'new connection ID',
   })
   connectionId: string;
 
   @ApiProperty({
-    description: 'Doctor info'
+    description: 'Doctor info',
   })
   doctor: {
     id: string;
@@ -74,7 +73,7 @@ export class QrConnectionResponseDto {
   };
 
   @ApiProperty({
-    description: 'Patient info'
+    description: 'Patient info',
   })
   patient: {
     id: string;
@@ -82,25 +81,26 @@ export class QrConnectionResponseDto {
   };
 
   @ApiProperty({
-    description: 'connection date and time'
+    description: 'connection date and time',
   })
   connectedAt: Date;
 
   @ApiProperty({
     description: 'connection method',
-    example: 'QR_CODE'
+    example: 'QR_CODE',
   })
   connectionMethod: string;
 
   @ApiProperty({
     description: 'success message',
-    example: 'connection successful! the doctor can now access your patient file',
+    example:
+      'connection successful! the doctor can now access your patient file',
   })
   message: string;
 
   @ApiProperty({
     description: 'connection status',
-    example: 'ACTIVE'
+    example: 'ACTIVE',
   })
   status: string;
 }

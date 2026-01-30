@@ -1,5 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { CompleteProfileDto, RegisterBasicDto, RegisterInitDto, RegisterVerifyEmailDto, VerifyOtpDto } from '../dto/auth.dto';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  CompleteProfileDto,
+  RegisterBasicDto,
+  RegisterInitDto,
+  RegisterVerifyEmailDto,
+  VerifyOtpDto,
+} from '../dto/auth.dto';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OtpProvider } from './otp.provider';
@@ -7,24 +18,23 @@ import { UsersService } from 'src/users/users.service';
 import { userStatusInfo } from 'src/common/enums/userStatus.enum';
 import { userRoleInfo } from 'src/common/enums/userRole.enum';
 
-
 @Injectable()
 export class RegisterProvider {
   constructor(
     private readonly prisma: PrismaService,
     private readonly otp: OtpProvider,
     private readonly usersService: UsersService,
-  ) { }
+  ) {}
 
   /**
-   * 
-   * @param dto RegisterInitDto 
+   *
+   * @param dto RegisterInitDto
    * @returns { success: boolean; message: string; data: { tempUserId: string; role: userRoleInfo; status: string } }
    */
   async registerInit(dto: RegisterInitDto): Promise<{
     success: boolean;
     message: string;
-    data: { tempUserId: string; role: string; status: string }
+    data: { tempUserId: string; role: string; status: string };
   }> {
     const { role } = dto;
 
@@ -46,9 +56,8 @@ export class RegisterProvider {
 
   async registerBasice(dto: RegisterBasicDto): Promise<{
     message: string;
-    data: { userId: string; status: string }
+    data: { userId: string; status: string };
   }> {
-
     // Validate password confirmation
     if (dto.password !== dto.confirmPassword) {
       throw new BadRequestException('Passwords do not match');
@@ -72,7 +81,6 @@ export class RegisterProvider {
       throw new ConflictException('Email already registered');
     }
 
-
     // Hash password
     const hash = await this.hashPassword(dto.password);
 
@@ -83,22 +91,21 @@ export class RegisterProvider {
     await this.otp.generateAndSendOtp(updatedUser.id, 'EMAIL_VERIFICATION');
 
     return {
-
       message: 'Basic info saved. Please verify your email.',
       data: {
         userId: updatedUser.id,
         status: updatedUser.status,
       },
-    }
+    };
   }
 
   /**
-   * 
-   * @param dto RegisterVerifyEmailDto 
+   *
+   * @param dto RegisterVerifyEmailDto
    * @returns { success: boolean; message: string; data: { userId: string; status: string } }
    */
   async registerVerifyEmail(dto: RegisterVerifyEmailDto): Promise<{
-    data: { userId: string; status: string, message: string }
+    data: { userId: string; status: string; message: string };
   }> {
     const { userId, otp } = dto;
 
@@ -108,8 +115,11 @@ export class RegisterProvider {
     }
 
     // Update user status to approved (or keep pending for admin approval)
-    await this.usersService.updateUserStatus(userId, userStatusInfo.EMAIL_VERIFIED, 2);
-    
+    await this.usersService.updateUserStatus(
+      userId,
+      userStatusInfo.EMAIL_VERIFIED,
+      2,
+    );
 
     return {
       data: {
@@ -122,12 +132,15 @@ export class RegisterProvider {
 
   /**
    * (Step 4)
-   * @param userId string 
-   * @param dto CompleteProfileDto 
+   * @param userId string
+   * @param dto CompleteProfileDto
    * @returns { success: boolean; message: string; data: { userId: string; status: string } }
    */
-  async completeUserProfile(userId: string, dto: CompleteProfileDto): Promise<{
-    data: { userId: string; status: string, message: string };
+  async completeUserProfile(
+    userId: string,
+    dto: CompleteProfileDto,
+  ): Promise<{
+    data: { userId: string; status: string; message: string };
   }> {
     const { phone, nationalId, medicalCardNumber } = dto;
 
@@ -139,7 +152,11 @@ export class RegisterProvider {
     }
 
     // Check if nationalId already exists and Update user with profile data
-      const updatedUser = await this.usersService.completeAdditionalProfile(userId, nationalId, phone);
+    const updatedUser = await this.usersService.completeAdditionalProfile(
+      userId,
+      nationalId,
+      phone,
+    );
 
     // Create role-specific profile
     if (user.role === userRoleInfo.patient) {
@@ -162,7 +179,8 @@ export class RegisterProvider {
 
     return {
       data: {
-        message: 'Profile completed successfully. Please wait for admin approval.',
+        message:
+          'Profile completed successfully. Please wait for admin approval.',
         userId: updatedUser.id,
         status: updatedUser.status,
       },

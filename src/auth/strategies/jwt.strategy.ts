@@ -1,14 +1,15 @@
-import { ConfigService } from "@nestjs/config";
-import { PassportStrategy } from "@nestjs/passport";
-import { Strategy, ExtractJwt } from "passport-jwt";
-import { AuthService } from "../auth.service";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { JwtPayload } from "../interfaces/jwt-payload.interface";
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy, ExtractJwt } from 'passport-jwt';
+import { AuthService } from '../auth.service';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private config:ConfigService,
-      private authService:AuthService
+  constructor(
+    private config: ConfigService,
+    private authService: AuthService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -18,18 +19,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-   try {
-    const user = await this.authService.validateJwtPayload(payload.sub);
-    
-      if(!user)
-        throw new UnauthorizedException('User not found or inactive');
-      
-       return payload;
+    try {
+      const user = await this.authService.validateJwtPayload(payload.sub);
 
-   } catch (error) {
- if (error instanceof UnauthorizedException) {
-    throw error;
-  }
-  throw new UnauthorizedException('Invalid or expired token');   }
+      if (!user) throw new UnauthorizedException('User not found or inactive');
+
+      return payload;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid or expired token');
+    }
   }
 }

@@ -6,7 +6,7 @@ export class ActiveUsersService {
   constructor(private readonly redis: RedisService) {}
 
   async setOnline(userId: string, socketId: string) {
-    await this.redis.set(`user:${userId}:online`, socketId, 60 * 5);// 5 minutes
+    await this.redis.set(`user:${userId}:online`, socketId, 60 * 5); // 5 minutes
   }
 
   async unsetOnline(userId: string) {
@@ -17,4 +17,3 @@ export class ActiveUsersService {
     return (await this.redis.get<string>(`user:${userId}:online`)) !== null;
   }
 }
-

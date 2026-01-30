@@ -18,7 +18,10 @@ export const ChatMapper = {
     return {
       connectionId: connection.id,
       chatId: connection.chat?.id || null,
-      participant,
+      participant: {
+        ...participant,
+        role: role === UserRole.DOCTOR ? UserRole.PATIENT : UserRole.DOCTOR,
+      },
       lastMessage: connection.chat?.messages?.[0] || null,
       lastMessageAt: connection.lastMessageAt,
       unreadCount: connection.unreadCount,

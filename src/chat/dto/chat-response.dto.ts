@@ -2,7 +2,7 @@ export class ChatParticipantDto {
   id: string;
   userId: string;
   name: string;
- // avatar: string | null;
+  // avatar: string | null;
 }
 
 export class ChatDetailsResponseDto {

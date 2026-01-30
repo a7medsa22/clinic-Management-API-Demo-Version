@@ -1,8 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Request,
+} from '@nestjs/common';
 import { QrService } from './qr.service';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuth } from 'src/common/decorators/api-auth.decorator';
-import { GenerateQrDto, InvalidateQrResponseDto, ScanQrAndValidateDto, ValidateQrDto } from './dto/generate-qr.dto';
+import {
+  GenerateQrDto,
+  InvalidateQrResponseDto,
+  ScanQrAndValidateDto,
+  ValidateQrDto,
+} from './dto/generate-qr.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { QrTokenResponseDto } from './dto/qr-response.dto';
@@ -15,47 +32,55 @@ import type { AuthUser } from 'src/auth/interfaces/request-with-user.interface';
 @ApiAuth()
 export class QrController {
   constructor(private readonly qrService: QrService) {}
-    
+
   @Post('generate')
   @Roles(UserRole.DOCTOR)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Generate a connection QR code',
     description: 'Generate a QR code for a patient to connect with a doctor',
-   })
-   @ApiResponse({
+  })
+  @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'The QR code was successfully generated',
     type: QrTokenResponseDto,
-   })
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Only doctors can generate QR codes' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only doctors can generate QR codes',
+  })
   @ApiResponse({ status: 400, description: 'Doctor account is not active' })
- async generateQr(@CurrentUser() user: AuthUser, @Body() body: GenerateQrDto): Promise<QrTokenResponseDto> {
-    return this.qrService.generateConnectionQrForDoctor (user,  body );
+  async generateQr(
+    @CurrentUser() user: AuthUser,
+    @Body() body: GenerateQrDto,
+  ): Promise<QrTokenResponseDto> {
+    return this.qrService.generateConnectionQrForDoctor(user, body);
   }
 
   @Post('scan')
   @Roles(UserRole.PATIENT)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Scan a connection QR code',
     description: 'Scan a QR code to connect with a doctor',
-   })
-   @ApiResponse({
+  })
+  @ApiResponse({
     status: HttpStatus.OK,
     description: 'The QR code was successfully scanned',
     type: QrTokenResponseDto,
-   })
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Only patients can scan QR codes' })
   @ApiResponse({ status: 400, description: 'Patient account is not active' })
- async scanQr(@CurrentUser() user: AuthUser, @Body() body: ScanQrAndValidateDto) {
-    return this.qrService.scanAndConnectForPatient (user,  body );
+  async scanQr(
+    @CurrentUser() user: AuthUser,
+    @Body() body: ScanQrAndValidateDto,
+  ) {
+    return this.qrService.scanAndConnectForPatient(user, body);
   }
-  
 
-   @Post('validate')
+  @Post('validate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Validate QR token without using it',
@@ -88,7 +113,7 @@ export class QrController {
     };
   }
 
-   @Get('active')
+  @Get('active')
   @Roles(UserRole.DOCTOR)
   @ApiOperation({
     summary: 'Get all active QR tokens',
@@ -99,7 +124,9 @@ export class QrController {
     description: 'List of active QR tokens',
     type: ActiveQrListResponseDto,
   })
-  async getActiveTokens(@CurrentUser('doctorId') doctorId:string): Promise<ActiveQrListResponseDto> {
+  async getActiveTokens(
+    @CurrentUser('doctorId') doctorId: string,
+  ): Promise<ActiveQrListResponseDto> {
     return this.qrService.getActiveTokens(doctorId);
   }
 
@@ -129,7 +156,6 @@ export class QrController {
     };
   }
 
-
   @Delete(':tokenId')
   @Roles(UserRole.DOCTOR)
   @HttpCode(HttpStatus.OK)
@@ -153,12 +179,9 @@ export class QrController {
     description: 'You can only delete your own tokens',
   })
   async invalidateToken(
-    @CurrentUser('doctorId') doctorId:string,
+    @CurrentUser('doctorId') doctorId: string,
     @Param('tokenId') tokenId: string,
   ): Promise<InvalidateQrResponseDto> {
     return this.qrService.invalidateToken(doctorId, tokenId);
   }
-  
-  
-
 }
