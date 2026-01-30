@@ -12,11 +12,24 @@ import { ChatEventsService } from './service/chat-events.service';
 import { WsJwtGuard } from '../auth/guards/ws-Jwt.guard';
 import { ActiveUsersService } from './service/active-users.service';
 import { UserCacheService } from '../common/cache/user-cache.service';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => NotificationsModule), AuthModule],
-  controllers: [ChatController],
+  imports: [
+    PrismaModule,
+    forwardRef(() => NotificationsModule),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' },
+      }),
+    }),
+  ],
+    controllers: [ChatController],
   providers: [ChatService, MessageService, ChatGateway, RedisService, ActiveUsersService, ChatEventsService, WsJwtGuard,UserCacheService],
-  exports: [ChatService, MessageService, ChatGateway, RedisService, ActiveUsersService, ChatEventsService],
+  exports: [ChatService, MessageService, ChatGateway,],
 })
 export class ChatModule {}

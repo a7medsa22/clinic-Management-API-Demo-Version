@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     NotFoundException,
@@ -22,7 +23,7 @@ export class ChatService {
 
         if (!connection) throw new NotFoundException('Connection not found');
         if (connection.status !== ConnectionStatus.ACTIVE)
-            throw new NotFoundException('Connection is not active');
+            throw new BadRequestException('Connection is not active');
 
         let chat = await this.prisma.chat.findUnique({
             where: { connectionId: connection.id },

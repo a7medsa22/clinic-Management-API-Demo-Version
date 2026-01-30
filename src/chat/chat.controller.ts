@@ -17,7 +17,7 @@ export class ChatController {
        ,private readonly messageService:MessageService, 
   ) {}
 
-  @Get()
+  @Get('conversations')
   @Roles(UserRole.DOCTOR,UserRole.PATIENT)
   @ApiOperation({
     summary: 'Get user conversations',

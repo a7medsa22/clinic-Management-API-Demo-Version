@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat System Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+        
+        .flow-section {
+            margin-bottom: 50px;
+        }
+        
+        .phase-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-left: 20px;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .step-description {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .highlight {
+            color: #50fa7b;
+            font-weight: bold;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 5px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px #667eea;
+        }
+        
+        .actor {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .actor.patient {
+            background: #4CAF50;
+        }
+        
+        .actor.doctor {
+            background: #2196F3;
+        }
+        
+        .actor.system {
+            background: #FF9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💬 Chat System - Complete Flow</h1>
+        
+        <!-- Phase 1 -->
+        <div class="flow-section">
+            <div class="phase-title">
+                📍 Phase 1: Connection & Chat Creation
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Scans QR Code
+                        </div>
+                        <div class="step-description">
+                            المريض يمسح الـ QR code في عيادة الدكتور
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Creates Connection
+                        </div>
+                        <div class="step-description">
+                            النظام يعمل connection بين الدكتور والمريض (status: ACTIVE)
+                        </div>
+                        <div class="code-block">
+DoctorPatientConnection {
+  id: <span class="highlight">"conn-123"</span>
+  doctorId: "doc-456"
+  patientId: "pat-789"
+  status: <span class="highlight">ACTIVE</span>
+  connectionType: QR_CODE
+}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Opens Chat Screen
+                        </div>
+                        <div class="step-description">
+                            المريض يدخل على شاشة "Chat with Dr. Ahmed"
+                        </div>
+                        <div class="code-block">
+POST /chat/connection/<span class="highlight">conn-123</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Creates Chat (First Time)
+                        </div>
+                        <div class="step-description">
+                            النظام يعمل chat جديد + رسالة ترحيبية
+                        </div>
+                        <div class="code-block">
+Chat {
+  id: <span class="highlight">"chat-abc"</span>
+  connectionId: "conn-123"
+}
+
+Message {
+  content: <span class="highlight">"Chat started. You can now communicate securely."</span>
+  messageType: "SYSTEM"
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 2 -->
+        <div class="flow-section">
+            <div class="phase-title">
+                🔌 Phase 2: WebSocket Connection
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Connects to WebSocket
+                        </div>
+                        <div class="code-block">
+socket = io('/chat', { auth: { token: 'JWT' } })
+<span class="highlight">✅ Connected!</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Joins Chat Room
+                        </div>
+                        <div class="code-block">
+socket.emit('join_chat', { chatId: 'chat-abc' })
+<span class="highlight">→ Joined room: "chat:chat-abc"</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Marks Messages as Read
+                        </div>
+                        <div class="step-description">
+                            كل الرسائل الغير مقروءة تتعلم automatic
+                        </div>
+                        <div class="code-block">
+UPDATE messages 
+SET isRead = <span class="highlight">true</span>, readAt = NOW()
+WHERE chatId = 'chat-abc' AND senderId != 'pat-789'
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 3 -->
+        <div class="flow-section">
+            <div class="phase-title">
+                📨 Phase 3: Sending Message
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Types & Sends Message
+                        </div>
+                        <div class="code-block">
+socket.emit('send_message', {
+  chatId: 'chat-abc',
+  content: <span class="highlight">'Hello Doctor, I have a question'</span>
+})
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Saves to Database
+                        </div>
+                        <div class="code-block">
+Message {
+  id: "msg-002"
+  chatId: "chat-abc"
+  senderId: "pat-789"
+  content: "Hello Doctor, I have a question"
+  isRead: <span class="highlight">false</span>
+  createdAt: "2025-11-23T10:30:00Z"
+}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Updates Cache
+                        </div>
+                        <div class="code-block">
+Connection.lastMessageAt = NOW()
+Connection.unreadCount = <span class="highlight">+1</span>
+Chat.lastMessagePreview = "Hello Doctor, I..."
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor doctor">Doctor</span>
+                            Receives Message (Real-time)
+                        </div>
+                        <div class="code-block">
+socket.on('new_message', (message) => {
+  <span class="highlight">📨 New message from Ali Mohamed</span>
+  displayMessage(message)
+  playSound()
+})
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Sends Notification (if offline)
+                        </div>
+                        <div class="step-description">
+                            لو الدكتور مش online → notification
+                        </div>
+                        <div class="code-block">
+if (!doctor.isOnline) {
+  createNotification({
+    type: 'NEW_CHAT_MESSAGE',
+    title: <span class="highlight">'New message from Ali'</span>
+  })
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 4 -->
+        <div class="flow-section">
+            <div class="phase-title">
+                ✓✓ Phase 4: Read Receipts
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor doctor">Doctor</span>
+                            Reads Message
+                        </div>
+                        <div class="code-block">
+socket.emit('mark_as_read', { 
+  messageId: 'msg-002' 
+})
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor system">System</span>
+                            Updates Database
+                        </div>
+                        <div class="code-block">
+UPDATE messages 
+SET isRead = <span class="highlight">true</span>, readAt = NOW()
+WHERE id = 'msg-002'
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Sees Read Receipt
+                        </div>
+                        <div class="code-block">
+socket.on('message_read', (data) => {
+  <span class="highlight">✓✓</span> Message read at 10:31 AM
+})
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 5 -->
+        <div class="flow-section">
+            <div class="phase-title">
+                ⌨️ Phase 5: Typing Indicator
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor doctor">Doctor</span>
+                            Starts Typing
+                        </div>
+                        <div class="code-block">
+socket.emit('typing_start', { chatId: 'chat-abc' })
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor patient">Patient</span>
+                            Sees "Dr. Ahmed is typing..."
+                        </div>
+                        <div class="code-block">
+socket.on('user_typing', (data) => {
+  showTypingIndicator(<span class="highlight">'Dr. Ahmed is typing...'</span>)
+})
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="step">
+                        <div class="step-title">
+                            <span class="actor doctor">Doctor</span>
+                            Stops Typing (after 3s or sends message)
+                        </div>
+                        <div class="code-block">
+socket.emit('typing_stop', { chatId: 'chat-abc' })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
