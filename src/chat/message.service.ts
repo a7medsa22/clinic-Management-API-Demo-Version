@@ -1,10 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { chatDetailsSelect, chatDetailsSelectWithStatus, connectionSelect } from 'src/common/selects/chat.select';
-import { PrismaService } from 'src/prisma/prisma.service';
+import {  chatDetailsSelectWithStatus } from '../common/selects/chat.select';
+import { PrismaService } from '../prisma/prisma.service';
 import { ChatService } from './service/chat.service';
-import { UserCacheService } from 'src/common/cache/user-cache.service';
+import { UserCacheService } from '../common/cache/user-cache.service';
 import { GetMessagesDto } from './dto';
-import { messageSelect } from 'src/common/selects/message.select';
+import { messageSelect } from '../common/selects/message.select';
 
 @Injectable()
 export class MessageService {
@@ -256,11 +256,4 @@ export class MessageService {
         });
 
     }
-
-
-
-
-
-
-
 }

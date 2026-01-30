@@ -3,15 +3,15 @@ import { ChatService } from './service/chat.service';
 import { ChatController } from './chat.controller';
 import { MessageService } from './message.service';
 import { ChatGateway } from './chat.gateway';
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { forwardRef } from '@nestjs/common';
-import { NotificationsModule } from 'src/notifications/notifications.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { RedisService } from 'src/common/cache/redis.service';
 import { ChatEventsService } from './service/chat-events.service';
-import { WsJwtGuard } from 'src/auth/guards/ws-Jwt.guard';
+import { WsJwtGuard } from '../auth/guards/ws-Jwt.guard';
 import { ActiveUsersService } from './service/active-users.service';
-import { UserCacheService } from 'src/common/cache/user-cache.service';
+import { UserCacheService } from '../common/cache/user-cache.service';
 
 @Module({
   imports: [PrismaModule, forwardRef(() => NotificationsModule), AuthModule],

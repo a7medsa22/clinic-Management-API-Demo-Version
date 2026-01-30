@@ -2,13 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException,
 import { ChatService } from './service/chat.service';
 import { MessageService } from './message.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
 import { UserRole } from '@prisma/client';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GetMessagesDto, SendMessageDto } from './dto';
 import { ApiAuth } from 'src/common/decorators/api-auth.decorator';
-import { use } from 'passport';
 import type { AuthUser } from 'src/auth/interfaces/request-with-user.interface';
 
 @Controller('chat')
