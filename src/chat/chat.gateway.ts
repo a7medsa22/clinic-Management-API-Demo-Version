@@ -1,5 +1,21 @@
-import { forwardRef, Inject, Injectable, Logger, UseGuards, ValidationPipe } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './service/chat.service';
 import { MessageService } from './message.service';
@@ -13,17 +29,14 @@ import { ChatEventsService } from './service/chat-events.service';
   cors: { origin: '*', credentials: true },
   namespace: '/chat',
 })
-
 @Injectable()
 @UseGuards(WsJwtGuard)
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
-
-  
-
-
 
   constructor(
     private readonly chatService: ChatService,
@@ -33,16 +46,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private notificationsService: NotificationsService,
     private readonly activeUsersService: ActiveUsersService,
     private readonly chatEvents: ChatEventsService,
-
-  ) { }
+  ) {}
   afterInit() {
     this.logger.log('Chat Gateway Initialized');
   }
 
-
   /**
-  * Handle connection
-  */
+   * Handle connection
+   */
   async handleConnection(client: Socket) {
     const userId = client.data.userId;
     if (!userId) {
@@ -65,14 +76,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     client.broadcast.emit('user_offline', { userId });
     this.logger.warn(`User ${userId} disconnected`);
-
   }
 
   // Join chat room
   @SubscribeMessage('join_chat')
   async joinChat(
     @ConnectedSocket() client: Socket,
-    @MessageBody(new ValidationPipe({ transform: true, whitelist: true })) data: { chatId: string },
+    @MessageBody(new ValidationPipe({ transform: true, whitelist: true }))
+    data: { chatId: string },
   ) {
     try {
       const userId = client.data.userId;
@@ -102,7 +113,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('leave_chat')
   leaveChat(
     @ConnectedSocket() client: Socket,
-    @MessageBody(new ValidationPipe({ transform: true, whitelist: true })) data: { chatId: string },
+    @MessageBody(new ValidationPipe({ transform: true, whitelist: true }))
+    data: { chatId: string },
   ) {
     client.leave(this.getRoom(data.chatId));
     this.stopTyping(client, data);
@@ -114,7 +126,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true })) data: SendMessageDto,
+    @MessageBody(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    data: SendMessageDto,
   ) {
     try {
       const userId = client.data.userId;
@@ -128,13 +147,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         return;
       }
 
-      const message = await this.chatEvents.sendMessage(chatId, userId, content);
+      const message = await this.chatEvents.sendMessage(
+        chatId,
+        userId,
+        content,
+      );
 
       this.server.to(this.getRoom(chatId)).emit('new_message', message);
       client.emit('message_sent', { message });
       await this.stopTyping(client, { chatId });
     } catch (error: any) {
-      client.emit('error', { message: error.message || 'Failed to send message' });
+      client.emit('error', {
+        message: error.message || 'Failed to send message',
+      });
     }
   }
 
@@ -144,7 +169,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('mark_as_read')
   async handleMarkAsRead(
     @ConnectedSocket() client: Socket,
-    @MessageBody(new ValidationPipe({ transform: true, whitelist: true })) data: { messageId: string },
+    @MessageBody(new ValidationPipe({ transform: true, whitelist: true }))
+    data: { messageId: string },
   ) {
     try {
       const userId = client.data.userId;
@@ -158,7 +184,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         readAt: message.readAt,
         readBy: userId,
       });
-
     } catch (error) {
       client.emit('error', { message: error.message });
     }
@@ -170,39 +195,39 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('typing_start')
   async startTyping(
     @ConnectedSocket() client: Socket,
-    @MessageBody(new ValidationPipe({ transform: true, whitelist: true })) data: { chatId: string },
+    @MessageBody(new ValidationPipe({ transform: true, whitelist: true }))
+    data: { chatId: string },
   ) {
     const userId = client.data.userId;
     const { chatId } = data;
-    const key = this.throttleTypingKey(userId,chatId)
+    const key = this.throttleTypingKey(userId, chatId);
 
-    const already = await this.redisService.get(key)
-    if(already) return;
+    const already = await this.redisService.get(key);
+    if (already) return;
 
-    await this.redisService.set(key,'1',5)
+    await this.redisService.set(key, '1', 5);
     // Emit to others in chat
-    client
-    .to(this.getRoom(chatId))
-    .emit('user_typing', { userId, chatId });
+    client.to(this.getRoom(chatId)).emit('user_typing', { userId, chatId });
   }
 
   /**
    * Typing indicator - stop
    */
   @SubscribeMessage('typing_stop')
- async stopTyping(
+  async stopTyping(
     @ConnectedSocket() client: Socket,
-    @MessageBody(new ValidationPipe({ transform: true, whitelist: true })) data: { chatId: string },
+    @MessageBody(new ValidationPipe({ transform: true, whitelist: true }))
+    data: { chatId: string },
   ) {
     const userId = client.data.userId;
     const { chatId } = data;
-       const key = this.throttleTypingKey(userId,chatId)
-       await this.redisService.del(key);
+    const key = this.throttleTypingKey(userId, chatId);
+    await this.redisService.del(key);
 
     // Emit to others in chat
     client
-    .to(this.getRoom(chatId))
-    .emit('user_stopped_typing', { userId, chatId });
+      .to(this.getRoom(chatId))
+      .emit('user_stopped_typing', { userId, chatId });
   }
 
   /**
@@ -229,7 +254,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   /**
    * Helper: Get online users count
    */
-  
+
   /**
    * Helper: Get chat room name
    */
@@ -245,7 +270,4 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   private throttleTypingKey(userId: string, chatId: string) {
     return `typing:${userId}:${chatId}`;
   }
-
-
-
 }

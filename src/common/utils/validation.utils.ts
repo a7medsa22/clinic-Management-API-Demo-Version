@@ -1,7 +1,10 @@
 export class ValidationUtils {
-    
   static isValidEgyptianNationalId(nationalId: string): boolean {
-    if (!nationalId || nationalId.length !== 14 || !/^\d{14}$/.test(nationalId)) {
+    if (
+      !nationalId ||
+      nationalId.length !== 14 ||
+      !/^\d{14}$/.test(nationalId)
+    ) {
       return false;
     }
 
@@ -30,29 +33,29 @@ export class ValidationUtils {
       /^\+20(2)\d{8}$/, // Landline with country code
       /^(02)\d{8}$/, // Landline without country code
     ];
-    
-    return patterns.some(pattern => pattern.test(phone));
+
+    return patterns.some((pattern) => pattern.test(phone));
   }
 
   static normalizePhoneNumber(phone: string): string {
     // Remove all non-digit characters except +
     let normalized = phone.replace(/[^\d+]/g, '');
-    
+
     // If starts with 20, add +
     if (normalized.startsWith('20') && !normalized.startsWith('+20')) {
       normalized = '+' + normalized;
     }
-    
+
     // If starts with 0 and is 11 digits, add +20
     if (normalized.startsWith('0') && normalized.length === 11) {
       normalized = '+20' + normalized.substring(1);
     }
-    
+
     // If no country code and starts with 1, add +20
     if (normalized.match(/^1[0-5]\d{8}$/)) {
       normalized = '+20' + normalized;
     }
-    
+
     return normalized;
   }
 
@@ -73,7 +76,9 @@ export class ValidationUtils {
     return new Date(fullYear, month - 1, day);
   }
 
-  static extractGenderFromNationalId(nationalId: string): 'Male' | 'Female' | null {
+  static extractGenderFromNationalId(
+    nationalId: string,
+  ): 'Male' | 'Female' | null {
     if (!this.isValidEgyptianNationalId(nationalId)) {
       return null;
     }
@@ -89,15 +94,22 @@ export class ValidationUtils {
     return masked + data.slice(-visibleChars);
   }
 
-  static validateAge(birthDate: Date, minAge: number = 0, maxAge: number = 150): boolean {
+  static validateAge(
+    birthDate: Date,
+    minAge: number = 0,
+    maxAge: number = 150,
+  ): boolean {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       return age - 1 >= minAge && age - 1 <= maxAge;
     }
-    
+
     return age >= minAge && age <= maxAge;
   }
 }

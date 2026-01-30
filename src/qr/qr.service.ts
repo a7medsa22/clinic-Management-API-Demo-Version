@@ -1,88 +1,101 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { GenerateQrDto, QrTokenType, ScanQrAndValidateDto } from './dto/generate-qr.dto';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  GenerateQrDto,
+  QrTokenType,
+  ScanQrAndValidateDto,
+} from './dto/generate-qr.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { QrConnectionResponseDto, QrTokenResponseDto } from './dto/qr-response.dto';
+import {
+  QrConnectionResponseDto,
+  QrTokenResponseDto,
+} from './dto/qr-response.dto';
 import { ConfigService } from '@nestjs/config';
-import {  userInclude } from '../common/selects/include.utils';
+import { userInclude } from '../common/selects/include.utils';
 import { QrProvider } from './qr.provider';
 import { ConnectionType } from '@prisma/client';
 import { ActiveQrItemDto } from './dto/active-qr-list.dto';
-import {Cron,CronExpression} from '@nestjs/schedule'
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { AuthUser } from 'src/auth/interfaces/request-with-user.interface';
 
-
 @Injectable()
 export class QrService {
-
-    constructor(private readonly prisma: PrismaService,
-      private readonly config:ConfigService,
-      private readonly qrProvider:QrProvider,
-      private readonly notificationsService: NotificationsService, 
-
-       
-    ) {}
-private userIncludeNotification ={
-  user: {
-    select: {
-      id:true,
-      firstName: true,
-      lastName: true,
-      status: true,
-      email:true,
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly qrProvider: QrProvider,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+  private userIncludeNotification = {
+    user: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        status: true,
+        email: true,
+      },
     },
-  },
-}
-    async generateConnectionQrForDoctor(user: AuthUser, dto: GenerateQrDto) {
-  if (!user.doctorId) {
-    throw new BadRequestException('Doctor profile not found');
+  };
+  async generateConnectionQrForDoctor(user: AuthUser, dto: GenerateQrDto) {
+    if (!user.doctorId) {
+      throw new BadRequestException('Doctor profile not found');
+    }
+
+    // هنا تبعت doctorId فقط
+    return this.generateConnectionQr(user.doctorId, dto);
   }
 
-  // هنا تبعت doctorId فقط
-  return this.generateConnectionQr(user.doctorId, dto);
-}
-
- async generateConnectionQr(doctorId: string,dto: GenerateQrDto): Promise<QrTokenResponseDto> {
-   const doctor = await this.prisma.doctor.findUnique({
-    where:{id:doctorId },
-    include:{
+  async generateConnectionQr(
+    doctorId: string,
+    dto: GenerateQrDto,
+  ): Promise<QrTokenResponseDto> {
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: {
         ...this.userIncludeNotification,
         specialization: true,
-    }
-   });
-    if(!doctor){
+      },
+    });
+    if (!doctor) {
       throw new NotFoundException('Doctor not found');
     }
-   if(doctor.user.status !== 'ACTIVE'){
+    if (doctor.user.status !== 'ACTIVE') {
       throw new BadRequestException('Doctor is not active');
     }
 
     // 2. Generate unique token
     const token = this.qrProvider.generateToken(doctorId);
 
-     const expiresAt = new Date();
+    const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + (dto.expiryMinutes || 5));
 
-    const qrToken= await this.prisma.qrToken.create({
-      data:{
+    const qrToken = await this.prisma.qrToken.create({
+      data: {
         doctorId,
         token,
-        type:dto.type || QrTokenType.CONNECTION,
+        type: dto.type || QrTokenType.CONNECTION,
         expiresAt,
-        metadata:dto.metadata || {}
-      }
+        metadata: dto.metadata || {},
+      },
     });
 
-        // . Generate QR Code image
-    const qrCodeImage  = await this.qrProvider.generateQrCodeImage(token);
-      
+    // . Generate QR Code image
+    const qrCodeImage = await this.qrProvider.generateQrCodeImage(token);
+
     //Calculate remaining minutes
-      const remainingMinutes = Math.floor(
+    const remainingMinutes = Math.floor(
       (qrToken.expiresAt.getTime() - Date.now()) / 60000,
     );
 
- return {
+    return {
       id: qrToken.id,
       token: qrToken.token,
       qrCodeImage,
@@ -103,28 +116,31 @@ private userIncludeNotification ={
    * Patient scans QR and creates instant connection
    */
   async scanAndConnectForPatient(user: AuthUser, dto: ScanQrAndValidateDto) {
-  if (!user.patientId) {
-    throw new BadRequestException('Patient profile not found');
+    if (!user.patientId) {
+      throw new BadRequestException('Patient profile not found');
+    }
+
+    return this.scanAndConnect(user.patientId, dto);
   }
-
-  return this.scanAndConnect(user.patientId, dto);
-}
-  async scanAndConnect(patientId: string,scanDto: ScanQrAndValidateDto): Promise<QrConnectionResponseDto> { 
+  async scanAndConnect(
+    patientId: string,
+    scanDto: ScanQrAndValidateDto,
+  ): Promise<QrConnectionResponseDto> {
     const qrToken = await this.validateToken(scanDto.token);
-      if (qrToken.type !== QrTokenType.CONNECTION) {
+    if (qrToken.type !== QrTokenType.CONNECTION) {
       throw new BadRequestException('Invalid QR token type');
-    }   
+    }
 
-      const patient = await this.prisma.patient.findUnique({
+    const patient = await this.prisma.patient.findUnique({
       where: { id: patientId },
       include: {
-          ...this.userIncludeNotification,  
+        ...this.userIncludeNotification,
       },
     });
-    if(!patient){
+    if (!patient) {
       throw new NotFoundException('Patient not found');
     }
-    if(patient.user.status !== 'ACTIVE'){
+    if (patient.user.status !== 'ACTIVE') {
       throw new BadRequestException('Patient is not active');
     }
 
@@ -133,31 +149,34 @@ private userIncludeNotification ={
       include: {
         ...this.userIncludeNotification,
         specialization: true,
-      }
+      },
     });
 
-    if(!doctor){
+    if (!doctor) {
       throw new NotFoundException('Doctor not found');
     }
-    if(doctor.user.status !== 'ACTIVE'){
+    if (doctor.user.status !== 'ACTIVE') {
       throw new BadRequestException('Doctor is not active');
     }
 
-    const existingConnection = await this.prisma.doctorPatientConnection.findUnique({
-      where:{doctorId_patientId:{doctorId:doctor.id,patientId:patient.id}}
-    });
-    if(existingConnection && existingConnection.status === 'ACTIVE'){
+    const existingConnection =
+      await this.prisma.doctorPatientConnection.findUnique({
+        where: {
+          doctorId_patientId: { doctorId: doctor.id, patientId: patient.id },
+        },
+      });
+    if (existingConnection && existingConnection.status === 'ACTIVE') {
       throw new BadRequestException('Connection already exists');
     }
 
     const connection = await this.prisma.doctorPatientConnection.create({
-      data:{
-        doctorId:doctor.id,
-        patientId:patient.id,
-        status:'ACTIVE',
+      data: {
+        doctorId: doctor.id,
+        patientId: patient.id,
+        status: 'ACTIVE',
         connectionType: ConnectionType.QR_CODE,
         connectedAt: new Date(),
-      }
+      },
     });
 
     // ✅ Send notifications
@@ -172,18 +191,18 @@ private userIncludeNotification ={
       patient.user.email,
     );
 
-    
     await this.prisma.qrToken.update({
-      where:{id:qrToken.id},
-      data:{
-        isUsed:true,
-        usedBy:patient.id,
+      where: { id: qrToken.id },
+      data: {
+        isUsed: true,
+        usedBy: patient.id,
         usedAt: new Date(),
-      }
+      },
     });
 
-return {
-      message: 'connection successful! the doctor can now access your patient file',
+    return {
+      message:
+        'connection successful! the doctor can now access your patient file',
       connectionId: connection.id,
       doctor: {
         id: doctor.id,
@@ -200,8 +219,7 @@ return {
       status: connection.status,
     };
   }
-  
-  
+
   /**
    * Validate QR token (check expiry, usage, etc)
    */
@@ -237,12 +255,11 @@ return {
 
     return qrToken;
   }
-   /**
+  /**
    * Get all active QR tokens for a doctor
    */
-   async getActiveTokens (doctorId:string){
-   
-   const tokens = await this.prisma.qrToken.findMany({
+  async getActiveTokens(doctorId: string) {
+    const tokens = await this.prisma.qrToken.findMany({
       where: {
         doctorId,
         expiresAt: { gte: new Date() }, // Not expired
@@ -252,7 +269,9 @@ return {
 
     const now = Date.now();
     const activeCount = tokens.filter((t) => !t.isUsed).length;
-    const expiredCount = tokens.filter((t) => new Date(t.expiresAt) < new Date()).length;
+    const expiredCount = tokens.filter(
+      (t) => new Date(t.expiresAt) < new Date(),
+    ).length;
 
     const tokenItems: ActiveQrItemDto[] = tokens.map((token) => ({
       id: token.id,
@@ -289,8 +308,9 @@ return {
     }
 
     if (token.doctorId !== doctorId) {
-     throw new UnauthorizedException('You can only invalidate your own tokens');
-
+      throw new UnauthorizedException(
+        'You can only invalidate your own tokens',
+      );
     }
 
     await this.prisma.qrToken.delete({
@@ -302,7 +322,7 @@ return {
       tokenId,
     };
   }
-  
+
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async cleanupExpiredTokens() {
     const deleted = await this.prisma.qrToken.deleteMany({
@@ -314,6 +334,4 @@ return {
     console.log(`🧹 Cleaned up ${deleted.count} expired QR tokens`);
     return deleted.count;
   }
-
-
 }

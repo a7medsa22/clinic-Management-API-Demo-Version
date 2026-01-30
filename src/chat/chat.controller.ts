@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException, Query, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  BadRequestException,
+  Query,
+  Put,
+} from '@nestjs/common';
 import { ChatService } from './service/chat.service';
 import { MessageService } from './message.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -13,30 +24,39 @@ import type { AuthUser } from 'src/auth/interfaces/request-with-user.interface';
 @Controller('chat')
 @ApiAuth()
 export class ChatController {
-  constructor(private readonly chatService: ChatService
-       ,private readonly messageService:MessageService, 
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly messageService: MessageService,
   ) {}
 
   @Get('conversations')
-  @Roles(UserRole.DOCTOR,UserRole.PATIENT)
+  @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Get user conversations',
-    description: 'Retrieve all conversations for a user, including both active and inactive chats',
+    description:
+      'Retrieve all conversations for a user, including both active and inactive chats',
   })
-  @ApiResponse({ status: 200, description: 'Conversations retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Conversations retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' }) 
-  async getConversations(@CurrentUser() user:AuthUser ) {
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async getConversations(@CurrentUser() user: AuthUser) {
     return this.chatService.getUserChats(user.sub, user.role);
   }
 
-   @Post('connection/:connectionId')
+  @Post('connection/:connectionId')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Get or create a chat',
-    description: 'Retrieve an existing chat or create a new one if it does not exist',
+    description:
+      'Retrieve an existing chat or create a new one if it does not exist',
   })
-  @ApiResponse({ status: 200, description: 'Chat retrieved or created successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat retrieved or created successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Connection not found' })
@@ -46,7 +66,10 @@ export class ChatController {
   ) {
     const chat = await this.chatService.getOrCreateChat(connectionId);
 
-    const hasAccess = await this.chatService.verifyUserAccess(chat.chatId, userId);
+    const hasAccess = await this.chatService.verifyUserAccess(
+      chat.chatId,
+      userId,
+    );
 
     if (!hasAccess) {
       throw new BadRequestException('You do not have access to this chat');
@@ -55,13 +78,16 @@ export class ChatController {
     return chat;
   }
 
-   @Get(':chatId')
+  @Get(':chatId')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Get chat details',
     description: 'Retrieve details of a specified chat',
   })
-  @ApiResponse({ status: 200, description: 'Chat details retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat details retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Chat not found' })
@@ -90,7 +116,7 @@ export class ChatController {
     return this.messageService.getMessages(chatId, userId, query);
   }
 
-   @Post('messages')
+  @Post('messages')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Send a message',
@@ -119,7 +145,7 @@ export class ChatController {
       dto.content,
       dto.messageType || 'TEXT',
     );
-     // Update chat (lastMessage + timestamp)
+    // Update chat (lastMessage + timestamp)
     const chat = await this.chatService.getChatDetails(dto.chatId, userId);
     await this.chatService.updateConnectionLastMessage(
       chat.connectionId,
@@ -130,7 +156,7 @@ export class ChatController {
     return message;
   }
 
-   @Put('messages/:messageId/read')
+  @Put('messages/:messageId/read')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Mark a message as read',
@@ -156,12 +182,12 @@ export class ChatController {
     return this.messageService.markAsRead(messageId, userId);
   }
 
-
   @Put(':chatId/read-all')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Mark all messages in a chat as read',
-    description: 'Mark all messages in the specified chat as read for the current user',
+    description:
+      'Mark all messages in the specified chat as read for the current user',
   })
   @ApiResponse({
     status: 200,
@@ -186,20 +212,20 @@ export class ChatController {
     return { message: 'All messages marked as read' };
   }
 
-   @Delete('messages/:messageId')
+  @Delete('messages/:messageId')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Delete a message',
-    description: 'Delete a specific message by its ID', 
+    description: 'Delete a specific message by its ID',
   })
   @ApiResponse({
-    status: 200,  
+    status: 200,
     description: 'Message deleted successfully',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Message deleted successfully' }, 
-      },  
+        message: { type: 'string', example: 'Message deleted successfully' },
+      },
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -211,12 +237,13 @@ export class ChatController {
   ) {
     return this.messageService.deleteMessage(messageId, userId);
   }
-  
+
   @Get('unread/count')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Get total unread message count for the current user',
-    description: 'Retrieve the total number of unread messages across all chats for the current user',  
+    description:
+      'Retrieve the total number of unread messages across all chats for the current user',
   })
   @ApiResponse({
     status: 200,
@@ -237,22 +264,23 @@ export class ChatController {
 
   @Get(':chatId/unread/count')
   @Roles(UserRole.DOCTOR, UserRole.PATIENT)
-   @ApiOperation({
-      summary: 'Get unread message count for a specific chat',
-      description: 'Retrieve the number of unread messages in a specific chat for the current user',
-    })
-    @ApiResponse({
-      status: 200,
-      description: 'Unread message count retrieved successfully',
-      schema: {
-        type: 'object',
-        properties: {
-          count: { type: 'number', example: 5 },
-        },
+  @ApiOperation({
+    summary: 'Get unread message count for a specific chat',
+    description:
+      'Retrieve the number of unread messages in a specific chat for the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Unread message count retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        count: { type: 'number', example: 5 },
       },
-    })
-    @ApiResponse({ status: 401, description: 'Unauthorized' })
-    @ApiResponse({ status: 403, description: 'Forbidden' })
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   async getChatUnreadCount(
     @Param('chatId') chatId: string,
     @CurrentUser('sub') userId: string,
@@ -260,7 +288,4 @@ export class ChatController {
     const count = await this.messageService.getUnreadCount(chatId, userId);
     return { count };
   }
-
-
-
 }

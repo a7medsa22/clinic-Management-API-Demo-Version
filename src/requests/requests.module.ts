@@ -4,9 +4,9 @@ import { RequestsController } from './requests.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports:[PrismaModule],
+  imports: [PrismaModule],
   controllers: [RequestsController],
   providers: [RequestsService],
-  exports:[RequestsService]
+  exports: [RequestsService],
 })
 export class RequestsModule {}

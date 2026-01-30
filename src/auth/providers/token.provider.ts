@@ -3,8 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { PrismaService } from '../../prisma/prisma.service';
-import { TokenType,UserRole, UserStatus } from '@prisma/client';
-import * as bcrypt from 'bcryptjs'
+import { TokenType, UserRole, UserStatus } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { DeviceInfoDto } from '../dto/auth.dto';
 
 @Injectable()
@@ -13,11 +13,10 @@ export class TokenProvider {
     private jwtService: JwtService,
     private configService: ConfigService,
     private prisma: PrismaService,
-  ) { }
+  ) {}
 
   // Refresh tokens
   async refreshTokens(userId: string, tokenId: string) {
-
     const token = await this.validateRefreshToken(userId, tokenId);
 
     if (!token) throw new UnauthorizedException('Token reuse detected');
@@ -26,7 +25,7 @@ export class TokenProvider {
       where: { id: tokenId },
       data: {
         isRevoked: true,
-      }
+      },
     });
 
     const user = await this.prisma.user.findUnique({
@@ -60,7 +59,10 @@ export class TokenProvider {
   }
 
   // Generate refresh token and store its hash in the database
-  async generateRefreshToken(userId: string, deviceInfo?: DeviceInfoDto): Promise<string> {
+  async generateRefreshToken(
+    userId: string,
+    deviceInfo?: DeviceInfoDto,
+  ): Promise<string> {
     const tokenId = crypto.randomUUID();
     const refreshToken = this.jwtService.sign(
       { sub: userId, tokenId },
@@ -80,29 +82,26 @@ export class TokenProvider {
         type: TokenType.REFRESH,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
         ...deviceInfo,
-      }
+      },
     });
 
     return refreshToken;
   }
-
 
   // Validate refresh token
   async validateRefreshToken(userId: string, tokenId: string) {
     const token = await this.prisma.authToken.findUnique({
       where: { id: tokenId },
     });
-    if (!token || token.isRevoked  || token.expiresAt < new Date()) {
-      throw new UnauthorizedException('invalid refresh token')
+    if (!token || token.isRevoked || token.expiresAt < new Date()) {
+      throw new UnauthorizedException('invalid refresh token');
     }
 
     return {
       userId,
-      tokenId
+      tokenId,
     };
-
-  };
-
+  }
 
   // Validate JWT payload and return user info
   async validateJwtPayload(userId: string): Promise<any> {
@@ -153,17 +152,17 @@ export class TokenProvider {
     await this.prisma.authToken.updateMany({
       where: {
         id: tokenId,
-        userId
+        userId,
       },
       data: { isRevoked: true },
     });
-    return { success: true }
-  };
+    return { success: true };
+  }
 
   async revokeAllSessions(userId: string) {
-  await this.prisma.authToken.updateMany({
-    where: { userId },
-    data: { isRevoked: true },
-  });
-}
+    await this.prisma.authToken.updateMany({
+      where: { userId },
+      data: { isRevoked: true },
+    });
+  }
 }

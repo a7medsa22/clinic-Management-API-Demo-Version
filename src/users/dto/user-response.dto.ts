@@ -1,10 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole, UserStatus } from '@prisma/client';
-import {  IsBoolean, IsDateString,  IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class UserProfileResponseDto {
   @ApiProperty({ example: 'uuid-from-init-step', description: 'User ID' })
-  @IsString() 
+  @IsString()
   id: string;
 
   @ApiProperty({ example: 'user@example.com' })
@@ -53,31 +59,33 @@ export class UserProfileResponseDto {
   @IsDateString()
   updatedAt: Date;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Patient profile (only for patients)',
-    required: false 
+    required: false,
   })
-  profile?: {
-    id: string;
-    dateOfBirth?: Date;
-    gender?: string;
-    address?: string;
-    emergencyContact?: string;
-    bloodType?: string;
-    allergies?: string;
-  } | {
-    id: string;
-    specializationId: string;
-    licenseNumber?: string;
-    experience?: number;
-    bio?: string;
-    consultationFee?: number;
-    workingDays?: string[];
-    workingHours?: { start: string; end: string };
-    specialization: {
-      id: string;
-      name: string;
-      nameAr?: string;
-    };
-  };
+  profile?:
+    | {
+        id: string;
+        dateOfBirth?: Date;
+        gender?: string;
+        address?: string;
+        emergencyContact?: string;
+        bloodType?: string;
+        allergies?: string;
+      }
+    | {
+        id: string;
+        specializationId: string;
+        licenseNumber?: string;
+        experience?: number;
+        bio?: string;
+        consultationFee?: number;
+        workingDays?: string[];
+        workingHours?: { start: string; end: string };
+        specialization: {
+          id: string;
+          name: string;
+          nameAr?: string;
+        };
+      };
 }

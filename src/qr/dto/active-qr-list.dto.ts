@@ -1,4 +1,3 @@
-
 import { ApiProperty } from '@nestjs/swagger';
 import { QrTokenType } from './generate-qr.dto';
 
@@ -44,4 +43,3 @@ export class ActiveQrListResponseDto {
   @ApiProperty()
   expiredCount: number;
 }
-

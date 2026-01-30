@@ -1,4 +1,15 @@
-import { IsEmail, IsString, IsOptional, IsEnum, MinLength, MaxLength, Matches, IsNotEmpty, IsUUID, Length } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsEnum,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsNotEmpty,
+  IsUUID,
+  Length,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { PasswordMatch } from 'src/common/validators/password-match.validator';
 import { IsEgyptianPhoneNumber } from 'src/common/validators/phone-number.validator';
@@ -6,12 +17,14 @@ import { IsEgyptianNationalId } from 'src/common/validators/egyptian-national-id
 import { userRoleInfo } from 'src/common/enums/userRole.enum';
 
 export class RegisterInitDto {
-  @ApiProperty({ 
-    enum: userRoleInfo, 
+  @ApiProperty({
+    enum: userRoleInfo,
     example: userRoleInfo.patient,
-    description: 'User role selection'
+    description: 'User role selection',
   })
-  @IsEnum(userRoleInfo, { message: 'Role must be either PATIENT, DOCTOR, or ADMIN' })
+  @IsEnum(userRoleInfo, {
+    message: 'Role must be either PATIENT, DOCTOR, or ADMIN',
+  })
   role: userRoleInfo;
 }
 
@@ -30,15 +43,17 @@ export class RegisterBasicDto {
   @IsNotEmpty()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    { message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' }
-  )
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
   password: string;
 
   @ApiProperty({ example: 'SecurePass123!' })
   @IsNotEmpty()
-  @PasswordMatch('password', { message: 'Password confirmation must match password' })
+  @PasswordMatch('password', {
+    message: 'Password confirmation must match password',
+  })
   confirmPassword: string;
 
   @ApiProperty({ example: 'John' })
@@ -46,15 +61,19 @@ export class RegisterBasicDto {
   @IsNotEmpty()
   @MinLength(2, { message: 'First name must be at least 2 characters long' })
   @MaxLength(50, { message: 'First name must not exceed 50 characters' })
-  @Matches(/^[a-zA-ZÀ-ÿ\u0600-\u06FF\s]+$/, { message: 'First name can only contain letters and spaces' })
+  @Matches(/^[a-zA-ZÀ-ÿ\u0600-\u06FF\s]+$/, {
+    message: 'First name can only contain letters and spaces',
+  })
   firstName: string;
 
   @ApiProperty({ example: 'Doe' })
-  @IsString() 
+  @IsString()
   @IsNotEmpty()
   @MinLength(2, { message: 'Last name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Last name must not exceed 50 characters' })
-  @Matches(/^[a-zA-ZÀ-ÿ\u0600-\u06FF\s]+$/, { message: 'Last name can only contain letters and spaces' })
+  @Matches(/^[a-zA-ZÀ-ÿ\u0600-\u06FF\s]+$/, {
+    message: 'Last name can only contain letters and spaces',
+  })
   lastName: string;
 }
 export class RegisterVerifyEmailDto {
@@ -62,9 +81,9 @@ export class RegisterVerifyEmailDto {
   @IsUUID()
   userId: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: '1234',
-    description: '4-digit verification code sent to email'
+    description: '4-digit verification code sent to email',
   })
   @IsString()
   @Length(4, 4, { message: 'OTP must be exactly 4 digits' })
@@ -73,33 +92,43 @@ export class RegisterVerifyEmailDto {
 }
 
 export class CompleteProfileDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: '+201234567890',
-    description: 'Egyptian phone number (mobile or landline)'
+    description: 'Egyptian phone number (mobile or landline)',
   })
   @IsString()
-  @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Please provide a valid phone number' })
-  @IsEgyptianPhoneNumber({ message: 'Please provide a valid Egyptian phone number' })
+  @Matches(/^\+?[1-9]\d{1,14}$/, {
+    message: 'Please provide a valid phone number',
+  })
+  @IsEgyptianPhoneNumber({
+    message: 'Please provide a valid Egyptian phone number',
+  })
   phone: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: '29001011234567',
-    description: '14-digit Egyptian National ID'
+    description: '14-digit Egyptian National ID',
   })
   @IsString()
-  @IsEgyptianNationalId({ message: 'Please provide a valid Egyptian National ID' })
+  @IsEgyptianNationalId({
+    message: 'Please provide a valid Egyptian National ID',
+  })
   nationalId: string;
 
   // Doctor-specific field
-  @ApiProperty({ 
-    example: 'DOC-56789', 
+  @ApiProperty({
+    example: 'DOC-56789',
     required: false,
-    description: 'Required for doctors only'
+    description: 'Required for doctors only',
   })
   @IsOptional()
   @IsString()
-  @MinLength(5, { message: 'Medical card number must be at least 5 characters long' })
-  @MaxLength(20, { message: 'Medical card number must not exceed 20 characters' })
+  @MinLength(5, {
+    message: 'Medical card number must be at least 5 characters long',
+  })
+  @MaxLength(20, {
+    message: 'Medical card number must not exceed 20 characters',
+  })
   medicalCardNumber?: string;
 }
 
@@ -124,35 +153,33 @@ export class ChangePasswordDto {
   @IsNotEmpty()
   oldPassword: string;
 
-
-
   @ApiProperty({ example: 'NewSecurePass456!', minLength: 8 })
   @IsString()
   @MinLength(8, { message: 'New password must be at least 8 characters long' })
   @MaxLength(128, { message: 'New password must not exceed 128 characters' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    { message: 'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' }
-  )
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
   @IsNotEmpty()
   newPassword: string;
 }
-export class ForgotPasswordDto{
-   @ApiProperty({ example: 'john.doe@example.com' })
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 }
-export class ResetPasswordDto{
+export class ResetPasswordDto {
   @ApiProperty({ example: 'NewSecurePass456!', minLength: 8 })
   @IsString()
   @MinLength(8, { message: 'New password must be at least 8 characters long' })
   @MaxLength(128, { message: 'New password must not exceed 128 characters' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    { message: 'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' }
-  )
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
   newPassword: string;
-  
+
   @ApiProperty({ example: '123456789012345678901234' })
   @IsNotEmpty({ message: 'Reset token is required' })
   @IsString()
@@ -190,7 +217,9 @@ export class ResendOtpDto {
 
   @ApiProperty({ example: 'EMAIL_VERIFICATION' })
   @IsNotEmpty({ message: 'Type is required' })
-  @IsEnum(['EMAIL_VERIFICATION', 'PASSWORD_RESET'], { message: 'Type must be either EMAIL_VERIFICATION or PASSWORD_RESET' })
+  @IsEnum(['EMAIL_VERIFICATION', 'PASSWORD_RESET'], {
+    message: 'Type must be either EMAIL_VERIFICATION or PASSWORD_RESET',
+  })
   type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
 }
 

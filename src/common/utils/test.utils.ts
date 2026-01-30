@@ -13,14 +13,22 @@ export class TestUtils {
   static generateRandomNationalId(): string {
     // Generate valid Egyptian National ID
     const century = Math.random() > 0.5 ? 2 : 3; // 2 for 19xx, 3 for 20xx
-    const year = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-    const month = Math.floor(1 + Math.random() * 12).toString().padStart(2, '0');
-    const day = Math.floor(1 + Math.random() * 28).toString().padStart(2, '0');
-    const govCode = Math.floor(1 + Math.random() * 35).toString().padStart(2, '0');
+    const year = Math.floor(Math.random() * 100)
+      .toString()
+      .padStart(2, '0');
+    const month = Math.floor(1 + Math.random() * 12)
+      .toString()
+      .padStart(2, '0');
+    const day = Math.floor(1 + Math.random() * 28)
+      .toString()
+      .padStart(2, '0');
+    const govCode = Math.floor(1 + Math.random() * 35)
+      .toString()
+      .padStart(2, '0');
     const sequence = Math.floor(100 + Math.random() * 900);
     const gender = Math.floor(Math.random() * 10);
     const checksum = Math.floor(Math.random() * 10);
-    
+
     return `${century}${year}${month}${day}${govCode}${sequence}${gender}${checksum}`;
   }
 
@@ -34,20 +42,27 @@ export class TestUtils {
     };
 
     let password = '';
-    
+
     // Ensure at least one of each type
-    password += charset.lowercase[Math.floor(Math.random() * charset.lowercase.length)];
-    password += charset.uppercase[Math.floor(Math.random() * charset.uppercase.length)];
-    password += charset.numbers[Math.floor(Math.random() * charset.numbers.length)];
-    password += charset.special[Math.floor(Math.random() * charset.special.length)];
-    
+    password +=
+      charset.lowercase[Math.floor(Math.random() * charset.lowercase.length)];
+    password +=
+      charset.uppercase[Math.floor(Math.random() * charset.uppercase.length)];
+    password +=
+      charset.numbers[Math.floor(Math.random() * charset.numbers.length)];
+    password +=
+      charset.special[Math.floor(Math.random() * charset.special.length)];
+
     // Fill the rest randomly
     const allChars = Object.values(charset).join('');
     for (let i = password.length; i < length; i++) {
       password += allChars[Math.floor(Math.random() * allChars.length)];
     }
-    
+
     // Shuffle the password
-    return password.split('').sort(() => Math.random() - 0.5).join('');
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
   }
 }

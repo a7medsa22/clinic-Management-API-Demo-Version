@@ -1,4 +1,12 @@
-import { IsOptional, IsEnum, IsString, IsNumberString, IsBoolean, isNumber, IsNumber } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsString,
+  IsNumberString,
+  IsBoolean,
+  isNumber,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole, UserStatus } from '@prisma/client';
 import { Transform } from 'class-transformer';
@@ -30,8 +38,8 @@ export class UserQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
-  
-   @ApiProperty({ required: false })
+
+  @ApiProperty({ required: false })
   @IsOptional()
   @Transform(({ value }) => value === 'true')
   @IsBoolean()

@@ -1,22 +1,20 @@
-import { nanoid } from "nanoid";
-import { QrService } from "./qr.service";
-import { ConfigService } from "@nestjs/config";
+import { nanoid } from 'nanoid';
+import { QrService } from './qr.service';
+import { ConfigService } from '@nestjs/config';
 import * as QRCode from 'qrcode';
-import * as crypto from 'crypto'
+import * as crypto from 'crypto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class QrProvider {
-  constructor(
-    private readonly config:ConfigService
-  ) {}
-    // ==================== PRIVATE HELPER METHODS ====================
+  constructor(private readonly config: ConfigService) {}
+  // ==================== PRIVATE HELPER METHODS ====================
 
   /**
    * Generate unique token with signature
    * Format: MDS_doctorId_randomString
    */
-   generateToken(doctorId: string): string {
+  generateToken(doctorId: string): string {
     const randomPart = nanoid(32); // Generate 32 char random string
     const baseToken = `${this.config.get('QR_TOKEN_PREFIX')}_${doctorId}_${randomPart}`;
     return baseToken;
@@ -25,8 +23,10 @@ export class QrProvider {
   /**
    * Verify token format
    */
-   verifyTokenFormat(token: string): boolean {
-    const regex = new RegExp(`^${this.config.get('QR_TOKEN_PREFIX')}[a-f0-9-]{36}_[a-zA-Z0-9_-]{32}$`);
+  verifyTokenFormat(token: string): boolean {
+    const regex = new RegExp(
+      `^${this.config.get('QR_TOKEN_PREFIX')}[a-f0-9-]{36}_[a-zA-Z0-9_-]{32}$`,
+    );
 
     return regex.test(token);
   }
@@ -34,7 +34,7 @@ export class QrProvider {
   /**
    * Verify token signature (optional extra security)
    */
-   verifyTokenSignature(token: string, doctorId: string): boolean {
+  verifyTokenSignature(token: string, doctorId: string): boolean {
     // Extract doctor ID from token
     const parts = token.split('_');
     if (parts.length !== 3) return false;
@@ -46,8 +46,7 @@ export class QrProvider {
   /**
    * Generate QR Code as Base64 image
    */
-   async generateQrCodeImage(token: string): Promise<string> {
-     
+  async generateQrCodeImage(token: string): Promise<string> {
     try {
       // Generate QR with high error correction
       const qrImage = await QRCode.toDataURL(token, {
@@ -70,8 +69,8 @@ export class QrProvider {
   /**
    * Generate HMAC signature for extra security (optional)
    */
-   generateSignature(data: string): string {
-    const TOKEN_SECRET = this.config.get('QR_TOKEN_PREFIX')
+  generateSignature(data: string): string {
+    const TOKEN_SECRET = this.config.get('QR_TOKEN_PREFIX');
     return crypto
       .createHmac('sha256', TOKEN_SECRET)
       .update(data)

@@ -32,9 +32,12 @@ export class ChatEventsService {
       content,
     );
 
-   const senderIsDoctor = chat.doctor.userId === userId;
+    const senderIsDoctor = chat.doctor.userId === userId;
     const recipientRole = senderIsDoctor ? 'PATIENT' : 'DOCTOR';
-    await this.chatService.incrementUnreadCount(chat.connectionId, recipientRole);
+    await this.chatService.incrementUnreadCount(
+      chat.connectionId,
+      recipientRole,
+    );
 
     const isRecipientOnline = await this.activeUsers.isOnline(recipientUserId);
     if (!isRecipientOnline) {

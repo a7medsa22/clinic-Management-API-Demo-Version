@@ -28,8 +28,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
   ],
-    controllers: [ChatController],
-  providers: [ChatService, MessageService, ChatGateway, RedisService, ActiveUsersService, ChatEventsService, WsJwtGuard,UserCacheService],
-  exports: [ChatService, MessageService, ChatGateway,],
+  controllers: [ChatController],
+  providers: [
+    ChatService,
+    MessageService,
+    ChatGateway,
+    RedisService,
+    ActiveUsersService,
+    ChatEventsService,
+    WsJwtGuard,
+    UserCacheService,
+  ],
+  exports: [ChatService, MessageService, ChatGateway],
 })
 export class ChatModule {}

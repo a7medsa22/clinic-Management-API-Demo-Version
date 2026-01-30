@@ -28,7 +28,7 @@ describe('ChatService', () => {
     patient: {
       id: 'pat-789',
       userId: 'user-pat',
-      user: { id: 'user-pat',  firstName: 'Ali', lastName: 'Hassan' },
+      user: { id: 'user-pat', firstName: 'Ali', lastName: 'Hassan' },
     },
   };
 
@@ -41,15 +41,14 @@ describe('ChatService', () => {
     messages: [],
   };
   const mockRedisService = {
-  get: jest.fn(),
-  set: jest.fn(),
-  del: jest.fn(),
-};
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
 
   // Mock PrismaService
   const mockPrismaService = {
- 
-     doctorPatientConnection: {
+    doctorPatientConnection: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
@@ -60,11 +59,11 @@ describe('ChatService', () => {
       create: jest.fn(),
       update: jest.fn(),
     },
-      $transaction: jest.fn(async (fn) => {
+    $transaction: jest.fn(async (fn) => {
       if (Array.isArray(fn)) {
-      return Promise.all(fn.map(f => f));
+        return Promise.all(fn.map((f) => f));
       }
-    return fn(mockPrismaService);
+      return fn(mockPrismaService);
     }),
 
     message: {
@@ -82,8 +81,8 @@ describe('ChatService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatService,
-        {provide: PrismaService,useValue: mockPrismaService},
-        {provide: RedisService, useValue: mockRedisService },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: RedisService, useValue: mockRedisService },
       ],
     }).compile();
 
@@ -91,7 +90,7 @@ describe('ChatService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
 
     // Clear all mocks
-    jest.clearAllMocks(); 
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -140,16 +139,17 @@ describe('ChatService', () => {
 
       const result = await service.getOrCreateChat('conn-123');
 
-      expect(result).toEqual(mockChat);
+      expect(result).toEqual({
+        chatId: 'chat-abc',
+        connectionId: 'conn-123',
+        doctor: { id: 'doc-456', name: 'Ahmed Mohamed' },
+        patient: { id: 'pat-789', name: 'Ali Hassan' },
+      });
       expect(mockPrismaService.chat.findUnique).toHaveBeenCalledWith({
         where: { connectionId: 'conn-123' },
-        include: {
-          connection: {
-            include: {
-              doctor: { include: { user: true } },
-              patient: { include: { user: true } },
-            },
-          },
+        select: {
+          id: true,
+          connectionId: true,
         },
       });
       expect(mockPrismaService.chat.create).not.toHaveBeenCalled();
@@ -168,17 +168,14 @@ describe('ChatService', () => {
 
       const result = await service.getOrCreateChat('conn-123');
 
-      expect(result).toEqual(mockChat);
+      expect(result).toEqual({
+        chatId: 'chat-abc',
+        connectionId: 'conn-123',
+        doctor: { id: 'doc-456', name: 'Ahmed Mohamed' },
+        patient: { id: 'pat-789', name: 'Ali Hassan' },
+      });
       expect(mockPrismaService.chat.create).toHaveBeenCalledWith({
         data: { connectionId: 'conn-123' },
-        include: {
-          connection: {
-            include: {
-              doctor: { include: { user: true } },
-              patient: { include: { user: true } },
-            },
-          },
-        },
       });
       expect(mockPrismaService.message.create).toHaveBeenCalledWith({
         data: {
@@ -207,12 +204,12 @@ describe('ChatService', () => {
         patient: {
           id: 'pat-1',
           userId: 'user-pat-1',
-          user: { firstName: 'Ali',lastName:'Ahmed' },
+          user: { firstName: 'Ali', lastName: 'Ahmed' },
         },
         doctor: {
           id: 'doc-456',
           userId: 'user-doc',
-          user: { firstName: 'Dr', lastName: 'Ahmed' }
+          user: { firstName: 'Dr', lastName: 'Ahmed' },
         },
         chat: {
           id: 'chat-1',
@@ -306,7 +303,22 @@ describe('ChatService', () => {
 
       const result = await service.getChatDetails('chat-abc', 'user-doc');
 
-      expect(result).toEqual(mockChat);
+      expect(result).toEqual({
+        chatId: 'chat-abc',
+        connectionId: 'conn-123',
+        doctor: {
+          id: 'doc-456',
+          userId: 'user-doc',
+          name: 'Ahmed Mohamed',
+          avatar: null,
+        },
+        patient: {
+          id: 'pat-789',
+          userId: 'user-pat',
+          name: 'Ali Hassan',
+          avatar: null,
+        },
+      });
     });
 
     it('should return chat details for patient', async () => {
@@ -314,7 +326,22 @@ describe('ChatService', () => {
 
       const result = await service.getChatDetails('chat-abc', 'user-pat');
 
-      expect(result).toEqual(mockChat);
+      expect(result).toEqual({
+        chatId: 'chat-abc',
+        connectionId: 'conn-123',
+        doctor: {
+          id: 'doc-456',
+          userId: 'user-doc',
+          name: 'Ahmed Mohamed',
+          avatar: null,
+        },
+        patient: {
+          id: 'pat-789',
+          userId: 'user-pat',
+          name: 'Ali Hassan',
+          avatar: null,
+        },
+      });
     });
   });
 
@@ -322,12 +349,12 @@ describe('ChatService', () => {
   // getUnreadCount Tests
   // ===============================================
   describe('getUnreadCount', () => {
-    it('should return 0 if doctor not found', async () => {
+    it('should throw NotFoundException if doctor not found', async () => {
       mockPrismaService.doctor.findUnique.mockResolvedValue(null);
 
-      const result = await service.getUnreadCount('user-doc', UserRole.DOCTOR);
-
-      expect(result).toBe(0);
+      await expect(
+        service.getUnreadCount('user-doc', UserRole.DOCTOR),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should return total unread count for doctor', async () => {
@@ -341,13 +368,12 @@ describe('ChatService', () => {
       expect(result).toBe(15);
     });
 
- 
     it('should return 0 if patient not found', async () => {
-      
       mockPrismaService.patient.findUnique.mockResolvedValue(null);
 
-      await expect(service.getUnreadCount('user-pat', UserRole.PATIENT)).rejects.toThrow(NotFoundException);
-
+      await expect(
+        service.getUnreadCount('user-pat', UserRole.PATIENT),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should return total unread count for patient', async () => {
@@ -367,13 +393,12 @@ describe('ChatService', () => {
   // ===============================================
   describe('verifyUserAccess', () => {
     it('should throw NotFoundException if chat not found', async () => {
-  mockPrismaService.chat.findUnique.mockResolvedValue(null);
+      mockPrismaService.chat.findUnique.mockResolvedValue(null);
 
-  await expect(service.verifyUserAccess('invalid-chat', 'user-doc')).rejects.toThrow(
-    NotFoundException,
-  );
-});
-
+      await expect(
+        service.verifyUserAccess('invalid-chat', 'user-doc'),
+      ).rejects.toThrow(NotFoundException);
+    });
 
     it('should return true if user is doctor in connection', async () => {
       mockPrismaService.chat.findUnique.mockResolvedValue(mockChat);

@@ -7,7 +7,10 @@ import { UserStatus } from '@prisma/client';
 
 @Injectable()
 export class GoogleOauth {
-  constructor(private prisma: PrismaService,private readonly loginProvider:LoginProvider) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly loginProvider: LoginProvider,
+  ) {}
   async googleLogin(googleUser: GoogleUser, req: Request) {
     let user = await this.prisma.user.findUnique({
       where: { email: googleUser.email },
@@ -41,6 +44,6 @@ export class GoogleOauth {
       });
     }
 
-    return this.loginProvider.login(user,req);
+    return this.loginProvider.login(user, req);
   }
 }

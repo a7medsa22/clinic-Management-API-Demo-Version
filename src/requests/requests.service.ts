@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFollowUpRequestDto } from './dto/create-follow-up-request.dto';
 import { RequestQueryDto } from './dto/request.query.dto';
@@ -7,30 +13,30 @@ import { SetAvailabilityDto } from './dto/set-availability.dto';
 
 @Injectable()
 export class RequestsService {
-  constructor(private readonly prisma:PrismaService){}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async createFollowUpRequest(userId:string,dto: CreateFollowUpRequestDto) {
-     const {doctorId,prescriptionImage,notes} = dto
+  async createFollowUpRequest(userId: string, dto: CreateFollowUpRequestDto) {
+    const { doctorId, prescriptionImage, notes } = dto;
 
     const patient = await this.prisma.patient.findUnique({
-  where: { userId },
-  include:{user:true}
-});
+      where: { userId },
+      include: { user: true },
+    });
 
-if (!patient) {
-  throw new NotFoundException('Patient profile not found');
-}
-  
-   const doctor = await this.prisma.doctor.findUnique({
-    where:{id:doctorId},
-    include:{user:true}
-   });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found');
+    }
+
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: { user: true },
+    });
 
     if (!doctor || doctor.user.status !== 'ACTIVE' || !doctor.user.isActive) {
       throw new NotFoundException('Doctor not found or inactive');
     }
 
-      const pendingRequest = await this.prisma.followUpRequest.findFirst({
+    const pendingRequest = await this.prisma.followUpRequest.findFirst({
       where: {
         patientId: patient.id,
         doctorId,
@@ -38,137 +44,145 @@ if (!patient) {
       },
     });
 
-
-
     if (pendingRequest) {
-      throw new ConflictException('You already have a pending request with this doctor');
+      throw new ConflictException(
+        'You already have a pending request with this doctor',
+      );
     }
 
     const request = await this.prisma.followUpRequest.create({
-      data:{
+      data: {
         patient: { connect: { id: patient.id } },
         doctor: { connect: { id: doctor.id } },
         prescriptionImage,
         notes,
       },
-      include:{
+      include: {
         ...this.patientInclude,
         ...this.doctorInclude,
-      }
-    })
+      },
+    });
     // TODO: Send notification to doctor
     // await this.notificationsService.sendNewRequestNotification(doctor.userId, request);
     return {
-            message: 'Follow-up request sent successfully',
-            request,
-          };
+      message: 'Follow-up request sent successfully',
+      request,
+    };
   }
-  async getPendingRequests(doctorId:string,dto:RequestQueryDto){
-    const {page=1,limit=10} = dto;
+  async getPendingRequests(doctorId: string, dto: RequestQueryDto) {
+    const { page = 1, limit = 10 } = dto;
 
     const skip = (page - 1) * limit;
 
-    const [requests , total] = await Promise.all([
+    const [requests, total] = await Promise.all([
       this.prisma.followUpRequest.findMany({
         where: {
           doctorId,
           status: 'PENDING',
         },
-        
+
         include: {
           ...this.patientInclude,
         },
         skip,
         take: limit,
-        orderBy:{requestDate:'asc'}
+        orderBy: { requestDate: 'asc' },
       }),
-      this.prisma.followUpRequest.count({where: {doctorId,status: 'PENDING'},
+      this.prisma.followUpRequest.count({
+        where: { doctorId, status: 'PENDING' },
       }),
     ]);
 
-   return {
+    return {
       requests,
       pagination: this.buildPagination(total, page, limit),
     };
   }
-    
-    async getAllRequests(doctorId:string,dto:RequestQueryDto){
-      const {page=1,limit=10,status} = dto;
 
-      const skip = (page - 1) * limit;
-      const where: any = { doctorId, ...(status && { status }) };
+  async getAllRequests(doctorId: string, dto: RequestQueryDto) {
+    const { page = 1, limit = 10, status } = dto;
 
-      const [requests , total] = await Promise.all([
-        this.prisma.followUpRequest.findMany({
+    const skip = (page - 1) * limit;
+    const where: any = { doctorId, ...(status && { status }) };
+
+    const [requests, total] = await Promise.all([
+      this.prisma.followUpRequest.findMany({
         where,
         skip,
         take: limit,
         include: this.patientInclude,
         orderBy: { requestDate: 'desc' },
+      }),
+      this.prisma.followUpRequest.count({ where }),
+    ]);
 
-        }),
-        this.prisma.followUpRequest.count({where}),
-      ]);
-    
-      return {
-        requests,
-        pagination: this.buildPagination(total, page, limit),
-      };
+    return {
+      requests,
+      pagination: this.buildPagination(total, page, limit),
+    };
+  }
+
+  async acceptRequest(
+    requestId: string,
+    doctorId: string,
+    dto: RespondToRequestDto,
+  ) {
+    const request = await this.prisma.followUpRequest.findUnique({
+      where: { id: requestId },
+      include: { patient: true, doctor: true },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Request not found');
     }
 
-    async acceptRequest(requestId:string,doctorId:string,dto:RespondToRequestDto){
-    
-      const request = await this.prisma.followUpRequest.findUnique({
-        where:{id:requestId},
-        include:{patient:true , doctor:true},
-      })
-
-
-      if(!request){
-        throw new NotFoundException('Request not found');
-      }
-
-      if (request.doctorId !== doctorId) {
+    if (request.doctorId !== doctorId) {
       throw new ForbiddenException('You can only respond to your own requests');
     }
 
-      if(request.status !== 'PENDING'){
-      throw new BadRequestException(`Request is already ${request.status.toLowerCase()}`);
-      }
-        // Update request status
-     const updatedRequest = await this.prisma.followUpRequest.update({
-        where:{id:requestId},
-        data:{
-          status:'ACCEPTED',
-          responseDate:new Date(),
-          respondedBy:doctorId,
-        }
-      });
+    if (request.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Request is already ${request.status.toLowerCase()}`,
+      );
+    }
+    // Update request status
+    const updatedRequest = await this.prisma.followUpRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'ACCEPTED',
+        responseDate: new Date(),
+        respondedBy: doctorId,
+      },
+    });
 
-      //create connection
-      const connection = await this.prisma.doctorPatientConnection.create({
-        data:{
-          doctorId:request.doctorId,
-          patientId:request.patientId,
-          connectionType:'REQUESTED',
-          status:'ACTIVE',
-          availableDays:dto.availableDays,
-          availableHours:dto.availableHours,
-        },
-        include:{
-          ...this.patientInclude,
-        }
-      })
-     // TODO: Send notification to patient
+    //create connection
+    const connection = await this.prisma.doctorPatientConnection.create({
+      data: {
+        doctorId: request.doctorId,
+        patientId: request.patientId,
+        connectionType: 'REQUESTED',
+        status: 'ACTIVE',
+        availableDays: dto.availableDays,
+        availableHours: dto.availableHours,
+      },
+      include: {
+        ...this.patientInclude,
+      },
+    });
+    // TODO: Send notification to patient
     // await this.notificationsService.sendRequestAcceptedNotification(request.patient.userId, connection);
 
     return {
       message: 'Request accepted successfully',
       connection,
-    }
+    };
   }
-   
-   async rejectRequest(requestId: string, doctorId: string, rejectionReason: string) {
+
+  async rejectRequest(
+    requestId: string,
+    doctorId: string,
+    rejectionReason: string,
+  ) {
     const request = await this.prisma.followUpRequest.findUnique({
       where: { id: requestId },
     });
@@ -182,7 +196,9 @@ if (!patient) {
     }
 
     if (request.status !== 'PENDING') {
-      throw new BadRequestException(`Request is already ${request.status.toLowerCase()}`);
+      throw new BadRequestException(
+        `Request is already ${request.status.toLowerCase()}`,
+      );
     }
 
     const updatedRequest = await this.prisma.followUpRequest.update({
@@ -193,7 +209,7 @@ if (!patient) {
         respondedBy: doctorId,
         rejectionReason,
       },
-      include: {...this.patientInclude},
+      include: { ...this.patientInclude },
     });
 
     // TODO: Send notification to patient
@@ -205,40 +221,39 @@ if (!patient) {
     };
   }
 
-  async getConnectedPatients(doctorId:string,dto:RequestQueryDto){
-        const {page=1,limit=10} = dto;
-        const skip = (page - 1) * limit;
+  async getConnectedPatients(doctorId: string, dto: RequestQueryDto) {
+    const { page = 1, limit = 10 } = dto;
+    const skip = (page - 1) * limit;
 
-        const [connections,total] = await Promise.all([
-          this.prisma.doctorPatientConnection.findMany({
-            where:{
-              doctorId,
-              status:'ACTIVE',
-            },
-            include:{...this.patientInclude},
-            skip,
-            take:limit,
-            orderBy:{lastActivityAt:'desc'},
-          }),
-          this.prisma.doctorPatientConnection.count({
-            where:{doctorId , status:'ACTIVE'}
-          }),
-        ]);
+    const [connections, total] = await Promise.all([
+      this.prisma.doctorPatientConnection.findMany({
+        where: {
+          doctorId,
+          status: 'ACTIVE',
+        },
+        include: { ...this.patientInclude },
+        skip,
+        take: limit,
+        orderBy: { lastActivityAt: 'desc' },
+      }),
+      this.prisma.doctorPatientConnection.count({
+        where: { doctorId, status: 'ACTIVE' },
+      }),
+    ]);
 
-        return {
-          connections,
-          pagination: this.buildPagination(total, page, limit),
-        };
-
+    return {
+      connections,
+      pagination: this.buildPagination(total, page, limit),
+    };
   }
 
-   async getConnectedDoctors(patientId: string) {
+  async getConnectedDoctors(patientId: string) {
     return this.prisma.doctorPatientConnection.findMany({
       where: {
         patientId,
         status: 'ACTIVE',
       },
-      include: {...this.doctorInclude },
+      include: { ...this.doctorInclude },
       orderBy: {
         lastActivityAt: 'desc',
       },
@@ -260,8 +275,8 @@ if (!patient) {
     }
 
     // Check access permission
-    const hasAccess = 
-      connection.doctor.userId === userId || 
+    const hasAccess =
+      connection.doctor.userId === userId ||
       connection.patient.userId === userId;
 
     if (!hasAccess) {
@@ -271,7 +286,11 @@ if (!patient) {
     return connection;
   }
 
-  async updateAvailability(connectionId: string,doctorId:string ,dto: SetAvailabilityDto) {
+  async updateAvailability(
+    connectionId: string,
+    doctorId: string,
+    dto: SetAvailabilityDto,
+  ) {
     const connection = await this.prisma.doctorPatientConnection.findUnique({
       where: { id: connectionId },
     });
@@ -290,7 +309,7 @@ if (!patient) {
     });
   }
 
-    async deactivateConnection(connectionId: string, doctorId: string) {
+  async deactivateConnection(connectionId: string, doctorId: string) {
     const connection = await this.prisma.doctorPatientConnection.findUnique({
       where: { id: connectionId },
     });

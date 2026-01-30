@@ -11,7 +11,8 @@ export class PasswordUtils {
     if (password.length >= 8) score += 1;
     if (password.length >= 12) score += 1;
     if (password.length >= 16) score += 1;
-    if (password.length < 8) feedback.push('Password should be at least 8 characters');
+    if (password.length < 8)
+      feedback.push('Password should be at least 8 characters');
 
     // Character variety
     if (/[a-z]/.test(password)) score += 1;
@@ -50,10 +51,26 @@ export class PasswordUtils {
 
   static isCommonPassword(password: string): boolean {
     const commonPasswords = [
-      'password', 'password123', '12345678', 'qwerty', 'abc123',
-      'monkey', '1234567890', 'letmein', 'trustno1', 'dragon',
-      'baseball', 'iloveyou', 'master', 'sunshine', 'ashley',
-      'bailey', 'passw0rd', 'shadow', '123123', '654321'
+      'password',
+      'password123',
+      '12345678',
+      'qwerty',
+      'abc123',
+      'monkey',
+      '1234567890',
+      'letmein',
+      'trustno1',
+      'dragon',
+      'baseball',
+      'iloveyou',
+      'master',
+      'sunshine',
+      'ashley',
+      'bailey',
+      'passw0rd',
+      'shadow',
+      '123123',
+      '654321',
     ];
     return commonPasswords.includes(password.toLowerCase());
   }
