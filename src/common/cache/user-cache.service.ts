@@ -10,7 +10,7 @@ export class UserCacheService {
   constructor(
     private prisma: PrismaService,
     private redis: RedisService,
-  ) {}
+  ) { }
 
   async getUserSnapshot(userId: string) {
     const key = `${this.PREFIX}${userId}`;

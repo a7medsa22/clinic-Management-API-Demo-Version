@@ -10,14 +10,13 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { userRoleInfo } from 'src/common/enums/userRole.enum';
 import { userStatusInfo } from 'src/common/enums/userStatus.enum';
-import { hash } from 'node_modules/bcryptjs/umd/types';
 import { RegisterBasicDto } from 'src/auth/dto/auth.dto';
 import { UserStatePattern } from './patterns/user-state.pattern';
 export type UserWithoutPassword = Omit<User, 'password'>;
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ---------logics
   async findByEmail(email: string) {
@@ -77,7 +76,7 @@ export class UsersService {
 
   async updateLastActivity(userId: string) {
     return this.prisma.user.update({
-      where: { id: userIupdateLastActivityd },
+      where: { id: userId },
       data: { updatedAt: new Date() },
     });
   }

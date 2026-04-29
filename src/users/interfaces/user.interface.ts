@@ -1,8 +1,8 @@
+import { userRoleInfo } from 'src/common/enums/userRole.enum';
 import { userStatusInfo } from 'src/common/enums/userStatus.enum';
-import { userRoleInfo } from './userRole.interface';
 
 export interface UserInfo {
-  id: string;
+  id: string
   email: string;
   firstName: string;
   lastName: string;

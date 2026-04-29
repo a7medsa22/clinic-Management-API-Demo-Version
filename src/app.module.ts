@@ -12,7 +12,7 @@ import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 import { QrModule } from './qr/qr.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
-import { UserCacheService } from './common/cache/user-cache.service';
+import { CacheModule } from './common/cache/cache.module';
 
 @Module({
   imports: [
@@ -45,6 +45,7 @@ import { UserCacheService } from './common/cache/user-cache.service';
       ],
     }),
 
+    CacheModule,
     PrismaModule,
     ConfigModule,
     AuthModule,
@@ -67,7 +68,6 @@ import { UserCacheService } from './common/cache/user-cache.service';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    UserCacheService,
   ],
 })
 export class AppModule {}

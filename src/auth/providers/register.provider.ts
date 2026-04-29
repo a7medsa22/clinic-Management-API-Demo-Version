@@ -54,7 +54,7 @@ export class RegisterProvider {
 
   /*Step 2: Register basic info (email, password, name) */
 
-  async registerBasice(dto: RegisterBasicDto): Promise<{
+  async registerBasic(dto: RegisterBasicDto): Promise<{
     message: string;
     data: { userId: string; status: string };
   }> {
