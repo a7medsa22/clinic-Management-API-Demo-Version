@@ -1,5 +1,3 @@
-import { nanoid } from 'nanoid';
-import { QrService } from './qr.service';
 import { ConfigService } from '@nestjs/config';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
@@ -15,7 +13,7 @@ export class QrProvider {
    * Format: MDS_doctorId_randomString
    */
   generateToken(doctorId: string): string {
-    const randomPart = nanoid(32); // Generate 32 char random string
+    const randomPart = crypto.randomBytes(24).toString('base64url'); // Generate 32 char random string
     const baseToken = `${this.config.get('QR_TOKEN_PREFIX')}_${doctorId}_${randomPart}`;
     return baseToken;
   }
@@ -62,7 +60,7 @@ export class QrProvider {
 
       return qrImage;
     } catch (error) {
-      throw new BadRequestException('فشل في توليد QR Code image');
+      throw new BadRequestException('Failed to generate QR Code image');
     }
   }
 

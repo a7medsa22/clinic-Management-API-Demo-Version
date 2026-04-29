@@ -1,273 +1,272 @@
 ## 🏥 MediSync API
 
-**MediSync** is a **Medical follow-up & Records Management System** built with **NestJS**, designed to streamline healthcare processes between doctors and patients.  
-MediSync aims to simplify doctor-patient interactions and provide secure digital healthcare management.  
-It provides secure authentication, appointment booking, prescription management, and communication modules — all under a modular, scalable backend architecture.
+**MediSync** is a professional **Medical follow-up & Records Management System** built with **NestJS**, designed to streamline healthcare processes between doctors and patients.
+
+### ❓ Problem Statement
+
+Healthcare in many regions, including Egypt, still relies heavily on fragmented paper records, leading to lost medical histories, prescription errors, and inefficient doctor-patient communication. MediSync exists to bridge this gap by providing a secure, centralized digital platform for reliable healthcare management.
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+<p align="center">
+  <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+  <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
   <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+---
 
-## 🚀 Features
+## 🛠️ What We Are Doing (Current Features)
 
-- 👤 Role-based Authentication (Doctor / Patient)
-- 💊 Prescription Creation & Sharing
-- 🔗 Connection Requests between Doctors & Patients
-- 🩺 Medical Specializations Management
-- 🧾 QR Code Verification for Prescriptions
-- 🛡️ Secure endpoints with JWT & Guards
-- 🧠 Modular and Scalable Architecture using NestJS
-- 💬 Real-time Chat System (WebSockets) — in-app messaging between doctors and patients
-- ⚡ Caching with Redis to improve performance and reduce database load
-- 🧩 Google OAuth (OAuth2) integration for social login (Google Sign-In)
-- 🔒 Auth updates: Device-based sessions and support for multiple auth providers
+The current version of MediSync API provides a robust foundation for digital healthcare:
 
-----
+- 👤 **Multi-role Authentication** — Specialized workflows for Patients, Doctors, and Admins.
+- 🔐 **Advanced Security** — Secure email verification with OTP, password reset flow, and Google OAuth2 integration.
+- 📱 **Device-based Sessions** — Refresh tokens are bound to specific devices; users can view active device sessions and revoke them (e.g., `GET /auth/sessions`, `DELETE /auth/sessions/:id`).
+- 💊 **Digital Prescriptions** — Doctors can create, manage, and share prescriptions securely.
+- 🔗 **Connection System** — Seamless connection requests between doctors and patients via invitations or **QR Code Scanning**.
+- 💬 **Real-time Communication** — Integrated Chat System using WebSockets for direct messaging between doctors and patients.
+- 🧾 **QR Verification** — Secure QR code generation for clinic check-ins and prescription validation.
+- 📂 **Medical Records** — Secure file management for medical reports, lab results, and X-rays.
+- 🔔 **Instant Notifications** — Real-time in-app and email notifications for appointments, requests, and messages.
+- ⚡ **Performance Optimized** — Layered caching with Redis and database connection pooling.
+
+---
 
 ## 🧠 Tech Stack
 
-| Category | Technology |
-|-----------|-------------|
-| **Language** | TypeScript |
-| **Framework** | [NestJS](https://nestjs.com/) |
-| **Database** | MongoDB with Mongoose |
-| **Authentication** | JWT, bcrypt |
-| **API Docs** | Swagger (OpenAPI 3.0) |
-| **Validation** | class-validator & class-transformer |
-| **Deployment (optional)** | Render / Railway |
-| **Testing Tools** | Postman Collection |
+| Category          | Technology                                               |
+| ----------------- | -------------------------------------------------------- |
+| **Framework**     | [NestJS](https://nestjs.com/) (Node.js)                  |
+| **Language**      | TypeScript                                               |
+| **Database**      | **PostgreSQL** with [Prisma ORM](https://www.prisma.io/) |
+| **Real-time**     | [Socket.io](https://socket.io/) (WebSockets)             |
+| **Caching**       | **Redis** (ioredis)                                      |
+| **Auth**          | Passport.js (JWT, Local, Google OAuth2)                  |
+| **Documentation** | [Swagger (OpenAPI 3.0)](https://swagger.io/)             |
+| **Communication** | Nodemailer with SMTP & Templates                         |
+| **Validation**    | class-validator & class-transformer                      |
 
 ---
-
 
 ## 🏗️ Project Structure
 
-```
+```bash
 src/
-├── auth/                  # Authentication & Authorization
-├── users/                 # User management (base)
-├── specializations/       # Medical specializations
-├── prescriptions/         # Prescription management
-├── notifications/         # Real-time notifications
-├── Request/               # Connection requests between doctors and patients
-├── config/                # Application configuration
-├── chat/                  # Chat System and (Real-time)
-├── email/                 # Email configuration
-├── QR/                    # QR code generation & verification
-├── common/                # Shared utilities, guards, decorators
-└── prisma/                # Prisma schema & migrations 
+├── auth/                  # Advanced Auth (JWT, OAuth2, Device Sessions)
+├── users/                 # Core User & Profile management
+├── patients/              # Patient-specific logic & records
+├── doctors/               # Doctor-specific logic & specializations
+├── prescriptions/         # Prescription management system
+├── requests/              # Connection & follow-up request logic
+├── chat/                  # Real-time WebSocket messaging
+├── notifications/         # Multi-channel notification system
+├── qr/                    # QR Token generation & verification
+├── prisma/                # Database schema & client management
+└── common/                # Shared decorators, guards, and interceptors
 ```
+
 ---
 
-## 🔐 Security Features
+## 🎯 Roadmap
 
-- **JWT Authentication** with refresh token rotation
-- **Google OAuth** with refresh and revoke token rotation
-- **Role-based Access Control** (RBAC && ABAC)
-- **Data Validation** with class-validator
-- **Device-based Sessions** — per-device refresh tokens and session management (list/revoke device sessions)
-- **Rate Limiting** to prevent abuse
-- **Helmet Security Headers**
-- **CORS Configuration**
-- **Input Sanitization**
-- **Audit Logging** for sensitive operations
+### Phase 1: Foundation (MVP) ✅
+
+- [x] Multi-role Auth & Email Verification
+- [x] Google OAuth Integration
+- [x] Device-based session management
+- [x] Connection requests (Doctor-Patient)
+- [x] Digital Prescriptions & QR Verification
+- [x] Real-time Chat & Notifications
+- [x] File management for medical records
+
+### Phase 2: Clinical Operations 🚀
+
+_Turning the app from a "chat tool" into a professional clinic management system._
+
+#### 2.1 — Appointment Scheduling Engine
+
+- Doctors define availability slots (days, hours, duration per session).
+- Patient booking with **Redis Locks** to prevent double-booking.
+- State management: `PENDING` → `CONFIRMED` → `IN_PROGRESS` → `COMPLETED` → `CANCELLED`.
+- Auto-reminders via **@nestjs/schedule** (24h/1h before).
+- Calendar export (.ics) for Google/Apple Calendar.
+
+#### 2.2 — Advanced Prescription System
+
+- Prescription templates for reusable medication combos.
+- **Drug Interaction Checker** (Integration with OpenFDA or similar API).
+- Expiry tracking and patient renewal requests.
+- **Pharmacy-ready PDF generation** with doctor signature watermarks (pdfkit).
+
+#### 2.3 — Medical Records V2
+
+- File versioning and auto-categorization (LAB_RESULT, XRAY, etc.).
+- **End-to-End Encryption (AES-256)** for files at rest.
+- Automatic image compression using **sharp**.
+- **File Access Audit Logs** (HIPAA-style tracking).
+- Scoped record sharing (Patient shares specific files with specific doctors).
+
+#### 2.4 — Clinic & Doctor Profile System
+
+- Multi-clinic management (different fees/schedules per clinic).
+- Admin-led Clinic verification (license uploads).
+- Patient reviews/ratings with abuse detection.
+- Specialization tags and education history.
+
+---
+
+### Phase 3: Intelligence & Analytics 🧠
+
+_Adding data value on top of clinical operations._
+
+#### 3.1 — Health Dashboard & Vitals Tracking
+
+- Manual vital logging (BP, Glucose, Weight, Heart Rate).
+- Custom vital monitoring plans per patient.
+- Trend charts and anomaly alerts for elevated readings.
+- Integration with wearables (Fitbit/Apple Health webhooks).
+
+#### 3.2 — AI-Powered Features
+
+- **Medical Report Summarization**: Lab PDF analysis using LLM APIs (GPT/Claude).
+- **Symptom Triage**: AI Urgency suggestions based on chat (with legal disclaimer).
+- **Prescription Auto-fill**: AI-suggested medications based on diagnosis.
+- **Smart Search**: Semantic search across records using **pgvector** embeddings.
+- **FAQ Chatbot**: AI assistant for dosage reminders and scheduling queries.
+
+#### 3.3 — Reporting & Admin Analytics
+
+- Admin dashboards (User growth, activity, most active doctors).
+- Doctor performance metrics (Response time, completion rate).
+- Financial reporting and patient engagement analytics.
+
+#### 3.4 — Notification System V2
+
+- **Push Notifications** via Firebase Cloud Messaging (FCM).
+- SMS alerts via Twilio for critical updates.
+- Notification preferences center and digest emails.
+
+---
+
+### Phase 4: Platform & Ecosystem 🏗️
+
+_Transforming MediSync into a complete healthcare ecosystem._
+
+#### 4.1 — Telemedicine (Video Consultations)
+
+- **WebRTC Peer-to-Peer calls** (mediasoup/LiveKit).
+- Virtual Waiting Room & session admission.
+- In-call features: Screen share, file share, and encrypted recording.
+- Bandwidth-adaptive streaming for low-connection areas.
+
+#### 4.2 — Payment & Billing System
+
+- **Payment Integration** (Paymob/Stripe) for appointment fees.
+- PDF Invoice generation and automated refund engine.
+- Doctor payout system (Platform commission management).
+- Insurance claim form generation (Egyptian insurance structures).
+
+#### 4.3 — Third-Party Integrations (Webhooks)
+
+- **Pharmacy Integration**: Direct prescription delivery to linked pharmacies.
+- **Lab Integration**: Direct results upload from labs to patient records.
+- **HL7 FHIR-compatible endpoints** for EMR system compatibility.
+- Secure Webhook registry with HMAC-SHA256 verification.
+
+#### 4.4 — Multi-Tenant Architecture
+
+- Hospital organization support with data isolation.
+- Hospital Admin roles for managing affiliated doctors.
+- White-label branding support and per-tenant feature flags.
 
 ---
 
 ## ⚙️ Getting Started
 
-#  Clone the Repository
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL 12+
+- Redis (for chat & caching)
+
+### Installation
 
 ```bash
-# Clone repository
+# 1. Clone the repository
 git clone https://github.com/ahmedsalah/MediSync-API.git
 cd medisync-backend
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Environment setup
+# 3. Environment Setup
 cp .env.example .env
-# Configure your database and other environment variables
+# Edit .env with your specific configuration (see table below)
 
-# Database setup
-npx prisma migrate dev
+# 4. Database Initialization
 npx prisma generate
+npx prisma migrate dev
 
-# Start development server
+# 5. Start the Server
 npm run start:dev
 ```
+
+### 📄 Environment Variables
+
+| Key                      | Description                      | Default / Example                          |
+| :----------------------- | :------------------------------- | :----------------------------------------- |
+| `DATABASE_URL`           | PostgreSQL connection string     | `postgresql://user:pass@localhost:5432/db` |
+| `JWT_SECRET`             | Secret key for Access Tokens     | `your-secret-key`                          |
+| `JWT_REFRESH_SECRET`     | Secret key for Refresh Tokens    | `your-refresh-secret`                      |
+| `JWT_EXPIRES_IN`         | Access Token expiration          | `15m`                                      |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh Token expiration         | `7d`                                       |
+| `PORT`                   | Server port                      | `3000`                                     |
+| `API_PREFIX`             | Base URL prefix for API          | `api/v1`                                   |
+| `MAX_FILE_SIZE`          | Maximum upload size in bytes     | `10485760` (10MB)                          |
+| `UPLOAD_DEST`            | Local directory for file uploads | `./uploads`                                |
+| `SMTP_HOST`              | SMTP server for emails           | `smtp.gmail.com`                           |
+| `SMTP_USER`              | SMTP username                    | `user@gmail.com`                           |
+| `SMTP_PASS`              | SMTP password                    | `app-password`                             |
+| `CORS_ORIGIN`            | Allowed CORS origins             | `http://localhost:3000`                    |
+
 ---
 
-# ⚙️ Environment Configuration
+## 🧪 Testing
 
-Create a `.env` file in the root directory:
+We use **Jest** for comprehensive testing to ensure API stability and security.
 
-```env
-# Database Configuration
-DATABASE_URL="postgresql://username:password@localhost:5432/medisync_db?schema=public"
+```bash
+# Run unit tests
+npm run test
 
-# JWT Configuration
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-JWT_REFRESH_SECRET="your-refresh-token-secret-key"
-JWT_EXPIRES_IN="15m"
-JWT_REFRESH_EXPIRES_IN="7d"
+# Run tests in watch mode
+npm run test:watch
 
-# Application Configuration
-NODE_ENV="development"
-PORT=3000
-API_PREFIX="api"  # Use just 'api' — versioning is handled via URI versioning (e.g. /api/v1)
+# Run end-to-end (E2E) tests
+npm run test:e2e
 
-# File Upload Configuration
-MAX_FILE_SIZE=10485760  # 10MB in bytes
-UPLOAD_DEST="./uploads"
-
-# Cloudinary Configuration (Optional)
-CLOUDINARY_NAME="your-cloudinary-name"
-CLOUDINARY_API_KEY="your-api-key"
-CLOUDINARY_API_SECRET="your-api-secret"
-
-# Email Configuration (for notifications)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your-email-password"
-SMTP_FROM="MediSync <noreply@medisync.com>"
-
-# Rate Limiting
-THROTTLE_TTL=60  # seconds
-THROTTLE_LIMIT=100  # requests per TTL
-
-# Security
-CORS_ORIGIN="http://localhost:3000,http://localhost:3001"
-COOKIE_SECRET="your-cookie-secret-key"
+# Generate test coverage report
+npm run test:cov
 ```
----
-
-### Prerequisites
-- Node.js 18+ 
-- PostgreSQL 12+
-- npm or yarn
-
-### 📘 API Endpoints
-
-## 🖼️ Swagger UI Preview
-
-Below are screenshots from the live Swagger documentation:
-
-| Module | Preview |
-|--------|----------|
-| Authentication | ![Swagger Authentication](./docs/swagger-auth.png) |
-| Users | ![Swagger Users](./docs/swagger-users.png) |
-| Prescriptions | ![Swagger Prescriptions](./docs/swagger-prescriptions.png) |
-| Specializations | ![Swagger Specializations](./docs/swagger-specializations.png) |
-| Connection Requests | ![Swagger Connection Requests](./docs/swagger-requests.png) |
-| Qr | ![Swagger Qr](./docs/swagger-qr.png) |
-
-Each module contains detailed schemas, responses, and error examples.
-
---- 
-
-## 🧩 Authentication Schemas
-
-Below are the main **Data Transfer Objects (DTOs)** used across the MediSync API.  
-Each schema defines the structure and validation rules for the request/response payloads.
-
-
-| DTO | Description |
-|-----|--------------|
-| **RegisterInitDto** | Step 1: Select role (Doctor / Patient) during registration |
-| **RegisterBasicDto** | Step 2: Submit basic info (email, password, name, etc.) |
-| **RegisterVerifyEmailDto** | Step 3: Verify user’s email using OTP |
-| **LoginDto** | User login with email and password |
-| **ForgotPasswordDto** | Request password reset via email |
-| **VerifyOtpDto** | Verify OTP for password reset |
-| **ResetPasswordDto** | Set new password after OTP verification |
-| **ResendOtpDto** | Resend verification OTP |
-| **RefreshTokenDto** | Refresh access token using refresh token |
-| **ChangePasswordDto** | Change current password (authenticated users) |
 
 ---
-
-## � Authentication updates
-
-- **Device-based Sessions** — refresh tokens are bound to specific devices; users can view active device sessions and revoke them (e.g., `GET /auth/sessions`, `DELETE /auth/sessions/:id`). This improves security for lost/stolen devices.
-- **Local Strategy (email/password)** — Passport Local strategy is supported for traditional email/password authentication and works alongside OAuth providers like Google.
-
----
-
-## �🔄 Development Workflow
-
-This project follows agile development principles with:
-- **MVP-first approach** - core features first
-- **Iterative development** - continuous improvement
-- **Team collaboration** - frontend/backend coordination
-- **Quality assurance** - testing and code review
-
-## 🎯 Roadmap
-
-### Phase 1 (MVP) ✅
-- User authentication & verification
-- Basic appointment booking
-- Medical record management
-- Admin user management
-- Role-based access control
-- Google Oauth 
-- Email notifications for important events
-- QR code generation & verification
-- Connection requests between doctors and patients
-- Notifications system for events like appointment confirmations, requests, and messages
-- Chat system for real-time communication between doctors and patients
-- File upload/download for medical records
-
-
-### Phase 2 (Enhanced)
-- Advanced file management => ...working
-- Detailed analytics
-- Mobile API optimization => ...working
-
-
-### Phase 3 (Advanced)
-- Telemedicine integration
-- AI-powered insights
-- Multi-language support
-- Third-party integrations
 
 ## 📈 Performance & Scalability
 
-- **Database Optimization** with proper indexing
-- **Caching Strategy** with Redis
-- **File Storage** optimized for medical documents
-- **API Rate Limiting** for stability
-- **Connection Pooling** for database efficiency
+- **Database Optimization**: Strategic indexing and Prisma connection pooling.
+- **Caching**: Redis-backed caching for frequently accessed medical metadata.
+- **Rate Limiting**: Throttler protection on sensitive auth and API endpoints.
+- **Security Headers**: Production-ready configuration with Helmet.js.
+
+---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## 📄 License
 
@@ -275,6 +274,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-🧑‍💻 Live Swagger Docs (Demo): https://medisync-api.onrender.com/api-docs
+🧑‍💻 **Live Swagger Docs**: [https://medisync-api.onrender.com/api-docs](https://medisync-api.onrender.com/api-docs)
 
 **Built with ❤️ for better healthcare management**
