@@ -139,3 +139,65 @@ src/
 ---
 
 *Last Updated: April 2026*
+
+---
+
+## 📡 Appointment / Scheduling — API Endpoints (Phase 2.1)
+
+> Base prefix is your app `globalPrefix` (e.g. `/api` in `main.ts`), plus controller paths below.
+
+### Availability
+- `POST /availability`
+  - Create availability for a doctor (weekly recurring window)
+- `POST /availability/bulk`
+  - Bulk create multiple availability windows
+- `PATCH /availability/:id`
+  - Update an availability window
+- `DELETE /availability/:id`
+  - Soft delete availability window
+
+- `GET /availability/doctor/:doctorId`
+  - Get doctor availability windows
+
+#### Breaks
+- `POST /availability/breaks`
+  - Create a doctor break window (lunch, prayer, etc.)
+- `GET /availability/breaks/:doctorId`
+  - Get doctor breaks
+- `DELETE /availability/breaks/:id`
+  - Delete doctor break
+
+#### Day-offs
+- `POST /availability/day-offs`
+  - Create a doctor day-off (date exception)
+- `GET /availability/day-offs/:doctorId`
+  - Get doctor day-offs
+- `DELETE /availability/day-offs/:id`
+  - Delete doctor day-off
+
+### Appointments
+- `POST /appointments`
+  - Book an appointment
+- `PATCH /appointments/:id/cancel`
+  - Cancel an appointment
+- `PATCH /appointments/:id/reschedule`
+  - Reschedule an appointment
+- `PATCH /appointments/:id/confirm`
+  - Confirm an appointment (doctor confirmation)
+- `PATCH /appointments/:id/complete`
+  - Complete appointment (placeholder/implementation pending)
+
+- `GET /appointments/doctor/:doctorId`
+  - Get appointments for a doctor (optional `status` query)
+- `GET /appointments/patient/:patientId`
+  - Get appointments for a patient (optional `status` query)
+- `GET /appointments/:id`
+  - Get a single appointment (optional `userId` query for ownership)
+
+### Slots
+- `GET /slots/available?doctorId=...&startDate=...&endDate=...`
+  - Get available slots for a doctor in a datetime range (max 100 in service response)
+- `GET /slots/range/:doctorId?start=...&end=...`
+  - Get generated slots for a doctor between two datetimes
+- `GET /slots/next?doctorId=...&days=...`
+  - Get next available slots from “now” (default window ~7 days; response capped)

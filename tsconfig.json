@@ -16,8 +16,9 @@
     "baseUrl": "./",
     "paths": {
       "src/*": ["src/*"],
-       "@/*": ["src/*"]
+      "@/*": ["src/*"]
     },
+    "types": ["jest", "node"],
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,

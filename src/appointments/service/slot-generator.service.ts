@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Appointment, DayOfWeek, DoctorAvailability, DoctorBreak, DoctorDayOff } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { AppointmentStatusPolicy } from "../policies/appointment-status.policy";
+import { TimeUtils } from "../../common/utils/time.utils";
 
 export interface TimeSlot {
     start: Date;
@@ -34,7 +35,7 @@ export class SlotGeneratorService {
         const { doctorId, startDate, endDate, timezone = 'Africa/Cairo' } = params;
         void timezone;
 
-        const normalizedRange = this.normalizeDateRange(startDate, endDate);
+        const normalizedRange = TimeUtils.normalizeDateRange(startDate, endDate);
         if (!normalizedRange) return [];
 
         const availabilities = await this.prisma.doctorAvailability.findMany({
@@ -55,7 +56,7 @@ export class SlotGeneratorService {
             },
         });
 
-        const dayOffKeys = new Set(dayOffRecords.map((dayOff) => this.getDateKey(this.normalizeDate(dayOff.date))));
+        const dayOffKeys = new Set(dayOffRecords.map((dayOff) => TimeUtils.getDateKey(TimeUtils.normalizeDate(dayOff.date))));
 
         const appointments = await this.prisma.appointment.findMany({
             where: {
@@ -81,7 +82,7 @@ export class SlotGeneratorService {
                 continue;
             }
 
-            const dayOfWeek = this.getDayOfWeek(currentDate);
+            const dayOfWeek = TimeUtils.getDayOfWeek(currentDate);
             const dayAvailabilities = availabilitiesByDay.get(dayOfWeek) ?? [];
             if (dayAvailabilities.length === 0) {
                 currentDate.setDate(currentDate.getDate() + 1);
@@ -118,18 +119,18 @@ export class SlotGeneratorService {
             const slotEnd = current + slotDuration;
 
             const isInBreak = breaks.some((dayBreak) =>
-                this.isOverlapping(slotStart, slotEnd, dayBreak.startTime, dayBreak.endTime),
+                TimeUtils.timeRangesOverlap(slotStart, slotEnd, dayBreak.startTime, dayBreak.endTime),
             );
             if (isInBreak) continue;
 
             const isBooked = bookedAppointments.some((appointment) =>
-                this.isOverlapping(slotStart, slotEnd, appointment.startMinutes, appointment.endMinutes),
+                TimeUtils.timeRangesOverlap(slotStart, slotEnd, appointment.startMinutes, appointment.endMinutes),
             );
             if (isBooked) continue;
 
             slots.push({
-                start: this.minutesToDate(date, slotStart),
-                end: this.minutesToDate(date, slotEnd),
+                start: TimeUtils.minutesToDate(date, slotStart),
+                end: TimeUtils.minutesToDate(date, slotEnd),
             });
         }
 
@@ -137,65 +138,35 @@ export class SlotGeneratorService {
     }
 
      isOverlapping(start1: number, end1: number, start2: number, end2: number): boolean {
-        return start1 < end2 && end1 > start2;
+        return TimeUtils.timeRangesOverlap(start1, end1, start2, end2);
     }
 
     private normalizeDate(date: Date): Date {
-        const normalized = new Date(date);
-        normalized.setHours(0, 0, 0, 0);
-        return normalized;
+        return TimeUtils.normalizeDate(date);
     }
 
         normalizeDateRange(startDate: Date, endDate: Date): { start: Date; end: Date } | null {
-        if (!(startDate instanceof Date) || !(endDate instanceof Date)) return null;
-
-        const start = this.normalizeDate(startDate);
-        const end = this.normalizeDate(endDate);
-        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start.getTime() > end.getTime()) {
-            return null;
-        }
-
-        return { start, end };
+        return TimeUtils.normalizeDateRange(startDate, endDate);
     }
 
     private getDateKey(date: Date): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return TimeUtils.getDateKey(date);
     }
 
     private getDayOfWeek(date: Date): DayOfWeek {
-        const dayNumber = date.getDay();
-        const dayMap: Record<number, DayOfWeek> = {
-            0: DayOfWeek.SUNDAY,
-            1: DayOfWeek.MONDAY,
-            2: DayOfWeek.TUESDAY,
-            3: DayOfWeek.WEDNESDAY,
-            4: DayOfWeek.THURSDAY,
-            5: DayOfWeek.FRIDAY,
-            6: DayOfWeek.SATURDAY,
-        };
-        return dayMap[dayNumber];
+        return TimeUtils.getDayOfWeek(date);
     }
 
         minutesToDate(date: Date, minutes: number): Date {
-        const result = new Date(date);
-        result.setHours(0, 0, 0, 0);
-        result.setMinutes(minutes);
-        result.setSeconds(0);
-        result.setMilliseconds(0);
-        return result;
+        return TimeUtils.minutesToDate(date, minutes);
     }
 
      dateToMinutes(date: Date): number {
-        return date.getHours() * 60 + date.getMinutes();
+        return TimeUtils.dateToMinutes(date);
     }
 
     private addDays(date: Date, days: number): Date {
-        const result = new Date(date);
-        result.setDate(result.getDate() + days);
-        return result;
+        return TimeUtils.addDays(date, days);
     }
 
     private isValidAvailability(availability: Partial<AvailabilityRecord>): availability is AvailabilityRecord {
@@ -235,17 +206,17 @@ export class SlotGeneratorService {
     }
 
     private getAppointmentsForDate(appointments: AppointmentRecord[], date: Date): AppointmentRange[] {
-        const dailyKey = this.getDateKey(this.normalizeDate(date));
+        const dailyKey = TimeUtils.getDateKey(TimeUtils.normalizeDate(date));
 
         return appointments
             .map((appointment) => {
-                const appointmentStartKey = this.getDateKey(this.normalizeDate(appointment.startTime));
-                const appointmentEndKey = this.getDateKey(this.normalizeDate(appointment.endTime));
+                const appointmentStartKey = TimeUtils.getDateKey(TimeUtils.normalizeDate(appointment.startTime));
+                const appointmentEndKey = TimeUtils.getDateKey(TimeUtils.normalizeDate(appointment.endTime));
 
                 const startMinutes =
-                    appointmentStartKey === dailyKey ? this.dateToMinutes(appointment.startTime) : 0;
+                    appointmentStartKey === dailyKey ? TimeUtils.dateToMinutes(appointment.startTime) : 0;
                 const endMinutes =
-                    appointmentEndKey === dailyKey ? this.dateToMinutes(appointment.endTime) : this.MINUTES_PER_DAY;
+                    appointmentEndKey === dailyKey ? TimeUtils.dateToMinutes(appointment.endTime) : this.MINUTES_PER_DAY;
 
                 const overlapsDate =
                     appointmentStartKey === dailyKey ||
