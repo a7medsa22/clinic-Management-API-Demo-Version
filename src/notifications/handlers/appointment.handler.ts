@@ -25,7 +25,7 @@ export class AppointmentHandler implements NotificationHandler {
                 };
 
 
-            default: // الحالة الافتراضية (Booked)
+            default:
                 return {
                     title: 'New Appointment Request',
                     message: `${data.patientName} booked appointment for ${data.date} at ${data.time}`,

@@ -178,13 +178,28 @@ export class QrService {
 
    
 
-    this.eventEmitter.emit('notification.trigger', {
-      userId: doctor.user.id,
-      type: NotificationType.NEW_CONNECTION,
-      data: {
+    const connectionNotifs = [
+      {
+        userId: doctor.user.id,
         senderId: patient.id,
         senderName: `${patient.user.firstName} ${patient.user.lastName}`,
       },
+      {
+        userId: patient.user.id,
+        senderId: doctor.id,
+        senderName: `Dr. ${doctor.user.firstName} ${doctor.user.lastName}`,
+      },
+    ];
+
+    connectionNotifs.forEach((notif) => {
+      this.eventEmitter.emit('notification.trigger', {
+        userId: notif.userId,
+        type: NotificationType.NEW_CONNECTION,
+        data: {
+          senderId: notif.senderId,
+          senderName: notif.senderName,
+        },
+      });
     });
 
     await this.prisma.qrToken.update({

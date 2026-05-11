@@ -218,6 +218,60 @@ describe('AppointmentsService', () => {
     });
   });
 
+  describe('completeAppointment', () => {
+    it('completes a confirmed appointment successfully', async () => {
+      const appointmentId = 'app_1';
+      const startTime = new Date('2026-01-05T10:00:00.000Z');
+      const endTime = new Date('2026-01-05T10:30:00.000Z');
+
+      prismaMock.appointment.findUnique.mockResolvedValue({
+        id: appointmentId,
+        status: AppointmentStatus.CONFIRMED,
+      });
+
+      prismaMock.appointment.update.mockResolvedValue({
+        id: appointmentId,
+        status: AppointmentStatus.COMPLETED,
+        startTime,
+        endTime,
+      });
+
+      const result = await service.completeAppointment(appointmentId);
+
+      expect(prismaMock.appointment.findUnique).toHaveBeenCalledWith({
+        where: { id: appointmentId },
+        select: { id: true, status: true },
+      });
+      expect(prismaMock.appointment.update).toHaveBeenCalledWith({
+        where: { id: appointmentId },
+        data: { status: AppointmentStatus.COMPLETED },
+        select: { id: true, status: true, startTime: true, endTime: true },
+      });
+      expect(result).toEqual({
+        id: appointmentId,
+        status: AppointmentStatus.COMPLETED,
+        startTime,
+        endTime,
+        message: 'Appointment completed successfully',
+      });
+    });
+
+    it('throws NotFoundException when appointment does not exist', async () => {
+      prismaMock.appointment.findUnique.mockResolvedValue(null);
+
+      await expect(service.completeAppointment('app_404')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws BadRequestException when appointment cannot be completed', async () => {
+      prismaMock.appointment.findUnique.mockResolvedValue({
+        id: 'app_1',
+        status: AppointmentStatus.CANCELLED,
+      });
+
+      await expect(service.completeAppointment('app_1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
   describe('cancelAppointment', () => {
     it('cancels appointment and sends cancellation notification with refund calc', async () => {
       const appointmentId = 'app_1';

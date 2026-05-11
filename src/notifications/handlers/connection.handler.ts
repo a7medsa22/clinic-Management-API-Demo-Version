@@ -20,6 +20,14 @@ export class ConnectionHandler implements NotificationHandler {
                         senderId: data.senderId,
                     },
                 };
+            case T.NEW_CONNECTION:
+                return {
+                    title: 'New Connection Established',
+                    message: `You are now connected with ${data.senderName}`,
+                    metadata: {
+                        senderId: data.senderId,
+                    },
+                };
             default:
                 return {
                     title: 'Connection Notification',

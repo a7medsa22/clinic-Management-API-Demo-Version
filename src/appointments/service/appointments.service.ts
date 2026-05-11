@@ -96,23 +96,15 @@ export class AppointmentsService {
     const dateText = appointment.startTime.toDateString();
     const timeText = appointment.startTime.toLocaleTimeString();
 
-    await Promise.all([
+    [appointment.patientId, appointment.doctorId].forEach(userId =>
       this.eventEmitter.emit('notification.trigger', {
-        userId: appointment.patientId,
-        type: NotificationType.APPOINTMENT_REMINDER,
-        data: {
-        appointmentId: appointment.id,
-        },
-      }),
-      this.eventEmitter.emit('notification.trigger', {
-        userId: appointment.doctorId,
+        userId,
         type: NotificationType.APPOINTMENT_REMINDER,
         data: {
           appointmentId: appointment.id,
-          metadata: { reminderType: 'scheduled' },
         },
-      }),
-    ]);
+      })
+    );
 
     return true;
   }
@@ -123,28 +115,20 @@ export class AppointmentsService {
     const timeText = appointment.startTime.toLocaleTimeString();
     const reminderLabel = timeframe === '24h' ? '24 hours' : timeframe === '1h' ? '1 hour' : timeframe;
 
-    await Promise.all([
+    const notificationData = {
+      title: `Appointment Reminder (${reminderLabel})`,
+      message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
+      appointmentId: appointment.id,
+      metadata: { timeframe },
+    };
+
+    [appointment.patientId, appointment.doctorId].forEach(userId =>
       this.eventEmitter.emit('notification.trigger', {
-        userId: appointment.patientId,
+        userId,
         type: NotificationType.APPOINTMENT_REMINDER,
-        data: {
-          title: `Appointment Reminder (${reminderLabel})`,
-          message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
-          appointmentId: appointment.id,
-          metadata: { timeframe },
-        },
-      }),
-      this.eventEmitter.emit('notification.trigger', {
-        userId: appointment.doctorId,
-        type: NotificationType.APPOINTMENT_REMINDER,
-        data: {
-          title: `Appointment Reminder (${reminderLabel})`,
-          message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
-          appointmentId: appointment.id,
-          metadata: { timeframe },
-        },
-      }),
-    ]);
+        data: notificationData,
+      })
+    );
 
     return { reminderSent: true, timeframe };
   }
@@ -245,6 +229,38 @@ export class AppointmentsService {
       throw error
     }
   }
+
+  async completeAppointment(appointmentId: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      select: { id: true, status: true },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    if (!AppointmentStatusPolicy.canBeCompleted(appointment.status)) {
+      throw new BadRequestException('Appointment cannot be completed in its current status');
+    }
+
+    const updated = await this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: AppointmentStatus.COMPLETED },
+      select: {
+        id: true,
+        status: true,
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    return {
+      ...this.mapAppointmentResponse(updated),
+      message: 'Appointment completed successfully',
+    };
+  }
+
   async cancelAppointment(
     appointmentId: string,
     userId: string,

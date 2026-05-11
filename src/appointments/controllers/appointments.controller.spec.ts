@@ -5,21 +5,21 @@ import { SlotGeneratorService } from '../service/slot-generator.service';
 
 describe('AppointmentsController', () => {
   let controller: AppointmentsController;
+  const appointmentsServiceMock = {
+    getAvailableSlots: jest.fn(),
+    getDoctorAppointments: jest.fn(),
+    getPatientAppointments: jest.fn(),
+    getAppointmentById: jest.fn(),
+    bookAppointment: jest.fn(),
+    confirmAppointment: jest.fn(),
+    cancelAppointment: jest.fn(),
+    rescheduleAppointment: jest.fn(),
+    completeAppointment: jest.fn(),
+    scheduleReminders: jest.fn(),
+    sendReminder: jest.fn(),
+  };
 
   beforeEach(async () => {
-    const appointmentsServiceMock = {
-      getAvailableSlots: jest.fn(),
-      getDoctorAppointments: jest.fn(),
-      getPatientAppointments: jest.fn(),
-      getAppointmentById: jest.fn(),
-      bookAppointment: jest.fn(),
-      confirmAppointment: jest.fn(),
-      cancelAppointment: jest.fn(),
-      rescheduleAppointment: jest.fn(),
-      scheduleReminders: jest.fn(),
-      sendReminder: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AppointmentsController],
       providers: [
@@ -33,5 +33,18 @@ describe('AppointmentsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('calls the service to complete an appointment', async () => {
+    const result = {
+      id: 'apt_123',
+      status: 'COMPLETED',
+      message: 'Appointment completed successfully',
+    };
+
+    appointmentsServiceMock.completeAppointment.mockResolvedValue(result);
+
+    await expect(controller.complete('apt_123')).resolves.toEqual(result);
+    expect(appointmentsServiceMock.completeAppointment).toHaveBeenCalledWith('apt_123');
   });
 });

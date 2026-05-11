@@ -219,13 +219,21 @@ export class AppointmentsController {
   @Patch('appointments/:id/complete')
   @ApiOperation({
     summary: 'Complete appointment',
-    description: 'Mark an appointment as completed (placeholder - not fully implemented).',
-    deprecated: true,
+    description: 'Mark a confirmed or in-progress appointment as completed.',
   })
   @ApiParam({ name: 'id', type: 'string', description: 'Appointment ID' })
-  @ApiResponse({ status: 501, description: 'Not implemented yet' })
+  @ApiResponse({
+    status: 200,
+    description: 'Appointment completed successfully',
+    example: {
+      id: 'apt_123',
+      status: 'COMPLETED',
+      message: 'Appointment completed successfully',
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Appointment cannot be completed in its current status or not found' })
   async complete(@Param('id') id: string) {
-    return { message: 'Not implemented yet', appointmentId: id };
+    return this.appointmentsService.completeAppointment(id);
   }
 
   /**
