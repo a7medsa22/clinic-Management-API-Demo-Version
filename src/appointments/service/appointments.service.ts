@@ -1,19 +1,18 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SlotGeneratorService } from './slot-generator.service';
 import { AvailableSlotsResponse, CancelAppointmentDto, CreateAppointmentDto, GetAvailableSlots, RescheduleAppointmentDto } from '../dto/appointment.dto';
 import { AppointmentStatusPolicy } from '../policies/appointment-status.policy';
 import { AppointmentRefundPolicy } from '../policies/appointment-refund.policy';
 import { Appointment, AppointmentStatus, NotificationType } from '@prisma/client';
-import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class AppointmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly slotService: SlotGeneratorService,
-    private readonly notificationsService: NotificationsService
-
+    private readonly eventEmitter: EventEmitter2,
   ) { }
   async getAvailableSlots(params: GetAvailableSlots): Promise<AvailableSlotsResponse> {
     const { doctorId, startDate, endDate } = params;
@@ -79,7 +78,7 @@ export class AppointmentsService {
 
   async getAppointmentById(appointmentId: string, userId?: string) {
     const appointment = await this.prisma.appointment.findUnique({
-      where: { id: appointmentId },
+      where: { id: appointmentId }
     });
 
     if (!appointment) {
@@ -98,19 +97,20 @@ export class AppointmentsService {
     const timeText = appointment.startTime.toLocaleTimeString();
 
     await Promise.all([
-      this.createAppointmentNotification({
+      this.eventEmitter.emit('notification.trigger', {
         userId: appointment.patientId,
         type: NotificationType.APPOINTMENT_REMINDER,
-        title: 'Appointment Reminder',
-        message: `Reminder: your appointment is scheduled for ${dateText} at ${timeText}.`,
-        metadata: { appointmentId: appointment.id, reminderType: 'scheduled' },
+        data: {
+        appointmentId: appointment.id,
+        },
       }),
-      this.createAppointmentNotification({
+      this.eventEmitter.emit('notification.trigger', {
         userId: appointment.doctorId,
         type: NotificationType.APPOINTMENT_REMINDER,
-        title: 'Appointment Reminder',
-        message: `Reminder: you have an appointment scheduled for ${dateText} at ${timeText}.`,
-        metadata: { appointmentId: appointment.id, reminderType: 'scheduled' },
+        data: {
+          appointmentId: appointment.id,
+          metadata: { reminderType: 'scheduled' },
+        },
       }),
     ]);
 
@@ -124,19 +124,25 @@ export class AppointmentsService {
     const reminderLabel = timeframe === '24h' ? '24 hours' : timeframe === '1h' ? '1 hour' : timeframe;
 
     await Promise.all([
-      this.createAppointmentNotification({
+      this.eventEmitter.emit('notification.trigger', {
         userId: appointment.patientId,
         type: NotificationType.APPOINTMENT_REMINDER,
-        title: `Appointment Reminder (${reminderLabel})`,
-        message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
-        metadata: { appointmentId: appointment.id, timeframe },
+        data: {
+          title: `Appointment Reminder (${reminderLabel})`,
+          message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
+          appointmentId: appointment.id,
+          metadata: { timeframe },
+        },
       }),
-      this.createAppointmentNotification({
+      this.eventEmitter.emit('notification.trigger', {
         userId: appointment.doctorId,
         type: NotificationType.APPOINTMENT_REMINDER,
-        title: `Appointment Reminder (${reminderLabel})`,
-        message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
-        metadata: { appointmentId: appointment.id, timeframe },
+        data: {
+          title: `Appointment Reminder (${reminderLabel})`,
+          message: `Reminder: your appointment is in ${reminderLabel} on ${dateText} at ${timeText}.`,
+          appointmentId: appointment.id,
+          metadata: { timeframe },
+        },
       }),
     ]);
 
@@ -182,12 +188,15 @@ export class AppointmentsService {
       },
     });
 
-    await this.createAppointmentNotification({
+    this.eventEmitter.emit('notification.trigger', {
       userId: doctorId,
       type: NotificationType.APPOINTMENT_BOOKED,
-      title: 'New Appointment Request',
-      message: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName} booked appointment for ${start.toDateString()} at ${start.toLocaleTimeString()}`,
-      metadata: { appointmentId: appointment.id },
+      data: {
+        patientName: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+        date: start.toDateString(),
+        time: start.toLocaleTimeString(),
+        appointmentId: appointment.id,
+      },
     });
 
     return {
@@ -208,16 +217,23 @@ export class AppointmentsService {
           status: AppointmentStatus.CONFIRMED
         },
         select: {
-          id: true, status: true, doctorId: true, startTime: true
+          id: true, status: true, doctorId: true, startTime: true,
+          patient: {
+            select: {
+              user: { select: { firstName: true, lastName: true } },
+            },
+          },
         }
       });
 
       // Notify doctor
-      await this.notificationsService.createNotification({
+      this.eventEmitter.emit('notification.trigger', {
         userId: updateAppoinment.doctorId,
         type: NotificationType.APPOINTMENT_CONFIRMED,
-        title: 'Appointment Confirmed',
-        message: `Patient confirmed appointment at ${updateAppoinment.startTime.toDateString()}`,
+        data: {
+          patientName: `${updateAppoinment.patient.user.firstName} ${updateAppoinment.patient.user.lastName}`,
+          appointmentId: updateAppoinment.id,
+        },
       });
 
       return updateAppoinment
@@ -267,12 +283,14 @@ export class AppointmentsService {
         now.getTime(),
       );
 
-      await this.createAppointmentNotification({
+      this.eventEmitter.emit('notification.trigger', {
         userId: updated.doctorId === userId ? updated.patientId : updated.doctorId,
         type: NotificationType.APPOINTMENT_CANCELLED,
-        title: 'Appointment Cancelled',
-        message: `Your appointment scheduled for ${updated.startTime.toDateString()} has been cancelled.`,
-        metadata: { appointmentId: updated.id, refundEligible: refund.eligible },
+        data: {
+          date: updated.startTime.toDateString(),
+          appointmentId: updated.id,
+          refundEligible: refund.eligible,
+        },
       });
 
       return this.buildCancellationResponse(updated, refund, 'Appointment cancelled successfully');
@@ -503,23 +521,7 @@ export class AppointmentsService {
     return true;
   }
 
-  private async createAppointmentNotification(
-    params: {
-      userId: string;
-      type: NotificationType;
-      title: string;
-      message: string;
-      metadata?: Record<string, any>;
-    },
-  ) {
-    return this.notificationsService.createNotification({
-      userId: params.userId,
-      type: params.type,
-      title: params.title,
-      message: params.message,
-      metadata: params.metadata,
-    });
-  }
+
   private mapAppointmentResponse(
     appointment: {
       id: string;

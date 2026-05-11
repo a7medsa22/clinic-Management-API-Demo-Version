@@ -162,8 +162,6 @@ export class RequestsService {
         patientId: request.patientId,
         connectionType: 'REQUESTED',
         status: 'ACTIVE',
-        availableDays: dto.availableDays,
-        availableHours: dto.availableHours,
       },
       include: {
         ...this.patientInclude,
@@ -287,28 +285,27 @@ export class RequestsService {
   }
   
   // i not need this sevice after finshed phases 2 
-  async updateAvailability(
-    connectionId: string,
-    doctorId: string,
-    dto: SetAvailabilityDto,
-  ) {
-    const connection = await this.prisma.doctorPatientConnection.findUnique({
-      where: { id: connectionId },
-    });
+  // async updateAvailability(
+  //   connectionId: string,
+  //   doctorId: string,
+  //   dto: SetAvailabilityDto,
+  // ) {
+  //   const connection = await this.prisma.doctorPatientConnection.findUnique({
+  //     where: { id: connectionId },
+  //   });
 
-    if (!connection) {
-      throw new NotFoundException('Connection not found');
-    }
+  //   if (!connection) {
+  //     throw new NotFoundException('Connection not found');
+  //   }
 
-    // Update connection availability
-    return this.prisma.doctorPatientConnection.update({
-      where: { id: connectionId },
-      data: {
-        availableDays: dto.availableDays,
-        availableHours: dto.availableHours,
-      },
-    });
-  }
+  //   // Update connection availability
+  //   return this.prisma.doctorPatientConnection.update({
+  //     where: { id: connectionId },
+  //     data: {
+  //       lastMessageAt: new Date(),
+  //     },
+  //   });
+  // }
 
   async deactivateConnection(connectionId: string, doctorId: string) {
     const connection = await this.prisma.doctorPatientConnection.findUnique({

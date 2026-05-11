@@ -1,73 +1,167 @@
-import { Injectable } from '@nestjs/common';
-import { NotificationType } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { NotificationType, Prisma } from '@prisma/client';
+import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateNotificationDto } from './dto/notifications.dto';
+import { NotificationsGateway } from './notifications.gateway';
+import { notificationRegistry } from './notification.registry';
+import { NotificationMetadata } from './interfaces/notification.metadata.interface';
+
+type NotificationCursor = {
+  createdAt: string;
+  id: string;
+};
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
 
-  async createNotification(dto:CreateNotificationDto) {
-    const {userId,type,title,message,metadata} = dto
-    return this.prisma.notification.create({
-      data: {
-        userId,
-        type,
-        title,
-        message,
-        metadata,
-        isRead: false,
-      },
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationsGateway: NotificationsGateway,
+  ) { }
+
+  /**
+   * Normalize metadata to ensure UI-ready deep-linking
+   */
+  private normalizeMetadata(
+    metadata: NotificationMetadata,
+    userId: string,
+    defaultActionUrl: string,
+  ): Prisma.JsonObject {
+    const safe =
+      metadata && typeof metadata === 'object' && !Array.isArray(metadata)
+        ? (metadata as unknown as Prisma.JsonObject)
+        : {};
+
+    const normalized: Prisma.JsonObject = {
+      ...safe,
+      actionUrl: metadata?.actionUrl || defaultActionUrl,
+      targetId: metadata?.targetId || userId,
+      targetType: metadata?.targetType || 'user',
+    };
+
+    return normalized;
+  }
+
+  /**
+   * Core method to create, save and emit a notification
+   */
+  async createNotification(
+    dto: Omit<CreateNotificationDto, 'title' | 'message'> &
+      Partial<Pick<CreateNotificationDto, 'title' | 'message'>>,
+  ) {
+    try {
+      const metadata = this.normalizeMetadata(
+        dto.metadata as NotificationMetadata,
+        dto.userId,
+        '/notifications',
+      );
+
+      // Fallback to SYSTEM_DEFAULT if registry doesn't have a handler for the incoming type
+      const handlerCandidate =
+        (notificationRegistry as Record<string, unknown>)[dto.type as never] ??
+        notificationRegistry.SYSTEM_DEFAULT;
+
+      type NotificationHandlerLike = {
+        build: (
+          data: { [key: string]: unknown },
+          type: CreateNotificationDto['type'],
+        ) => {
+          title: string;
+          message: string;
+          metadata?: unknown;
+        };
+      };
+
+      const handler = handlerCandidate as NotificationHandlerLike;
+
+      if (!handler || typeof handler !== 'object' || typeof handler.build !== 'function') {
+        throw new Error(`Notification handler not found for type: ${String(dto.type)}`);
+      }
+
+      const content = handler.build(metadata as Record<string, unknown>, dto.type);
+
+      const mergedMetadata: Prisma.JsonObject = {
+        ...(metadata as Prisma.JsonObject),
+        ...(content.metadata ?? {}),
+      };
+
+      const notification = await this.prisma.notification.create({
+        data: {
+          userId: dto.userId,
+          type: dto.type,
+          title: content.title,
+          message: content.message,
+          metadata: mergedMetadata as Prisma.InputJsonValue,
+          isRead: false,
+        },
+      });
+
+      // Push Real-time
+      const unreadCount = await this.getUnreadCount(dto.userId).catch(() => 0);
+      this.notificationsGateway.emitToUser(dto.userId, 'notification_created', {
+        notification,
+        unreadCount,
+      });
+
+      return notification;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to create notification for user ${dto.userId}: ${message}`);
+      throw error;
+    }
+  }
+
+  // --- Event Listeners (Decoupling) ---
+  // دلوقتي الموديلات التانية بس بـ "ترمي" Event والخدمة دي بتلقطه وتنفذه
+
+  @OnEvent('notification.trigger')
+  async handleNotificationTrigger(payload: { userId: string, type: NotificationType, data: any }) {
+    return this.createNotification({
+      userId: payload.userId,
+      type: payload.type,
+      metadata: payload.data,
     });
   }
 
-  /**
-   * Notify patient of successful connection
-   */
-  async notifyPatientConnectionSuccess(
-    patientUserId: string,
-    doctorName: string,
-    doctorEmail: string,
+  // --- Queries ---
+
+  async getUserNotifications(
+    userId: string,
+    params?: { limit?: number; cursor?: NotificationCursor },
   ) {
-    return this.createNotification({
-      userId:patientUserId,
-      type:NotificationType.CONNECTION_ACCEPTED,
-      title:'Connection Successful',
-      message:`You are now connected with Dr. ${doctorName}`,
-      metadata:{ doctorEmail },
+    const limit = params?.limit ?? 10;
+    const cursor = params?.cursor;
+    
+    const where: Prisma.NotificationWhereInput = { userId };
+
+    if (cursor) {
+      const createdAt = new Date(cursor.createdAt);
+      where.OR = [
+        { createdAt: { lt: createdAt } },
+        {
+          createdAt: { equals: createdAt },
+          id: { lt: cursor.id },
+        },
+      ];
     }
-    );
-  }
-  /**
-   * Notify doctor of new patient connection
-   */
-  async notifyDoctorNewConnection(
-    doctorUserId: string,
-    patientName: string,
-    patientEmail: string,
-  ) {
-    return this.createNotification({
-      userId:doctorUserId,
-      type:NotificationType.NEW_CONNECTION,
-      title:'New Patient Connection',
-      message:`${patientName} has connected with you via QR.`,
-      metadata:{ patientEmail },
-  });
-  }
-  /**
-   * Get user notifications
-   */
-  async getUserNotifications(userId: string, limit = 10) {
+
     return this.prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit,
     });
   }
 
-  /**
-   * Mark notification as read
-   */
+  async getUnreadCount(userId: string) {
+    return this.prisma.notification.count({
+      where: { userId, isRead: false },
+    });
+  }
+
+  // --- Mutations ---
+
   async markAsRead(notificationId: string) {
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -75,9 +169,6 @@ export class NotificationsService {
     });
   }
 
-  /**
-   * Mark all notifications as read
-   */
   async markAllAsRead(userId: string) {
     return this.prisma.notification.updateMany({
       where: { userId, isRead: false },
@@ -85,9 +176,6 @@ export class NotificationsService {
     });
   }
 
-  /**
-   * Delete notification
-   */
   async deleteNotification(notificationId: string) {
     return this.prisma.notification.delete({
       where: { id: notificationId },

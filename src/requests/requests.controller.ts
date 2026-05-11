@@ -195,17 +195,17 @@ export class RequestsController {
     status: 403,
     description: 'Only doctor can update availability',
   })
-  async updateAvailability(
-    @Param('id', ParseUUIDPipe) connectionId: string,
-    @CurrentUser('sub') doctorId: string,
-    @Body() body: SetAvailabilityDto,
-  ) {
-    return this.requestsService.updateAvailability(
-      connectionId,
-      doctorId,
-      body,
-    );
-  }
+  // async updateAvailability(
+  //   @Param('id', ParseUUIDPipe) connectionId: string,
+  //   @CurrentUser('sub') doctorId: string,
+  //   @Body() body: SetAvailabilityDto,
+  // ) {
+  //   return this.requestsService.updateAvailability(
+  //     connectionId,
+  //     doctorId,
+  //     body,
+  //   );
+  // }
 
   @Put('connections/:id/deactivate')
   @UseGuards(OwnershipGuard)

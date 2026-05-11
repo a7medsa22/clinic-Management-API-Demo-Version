@@ -41,17 +41,17 @@ export class ChatEventsService {
 
     const isRecipientOnline = await this.activeUsers.isOnline(recipientUserId);
     if (!isRecipientOnline) {
-      await this.notifications.createNotification(
-        recipientUserId,
-        'NEW_CHAT_MESSAGE',
-        `New message from ${message.senderName || 'Sender'}`,
-        content.substring(0, 100),
-        {
+      await this.notifications.createNotification({
+        userId: recipientUserId,
+        type: 'NEW_CHAT_MESSAGE',
+        title: `New message from ${message.senderName || 'Sender'}`,
+        message: content.substring(0, 100),
+        metadata: {
           chatId,
           messageId: message.id,
           senderId: userId,
         },
-      );
+    });
     }
 
     return message;

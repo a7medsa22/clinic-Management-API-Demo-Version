@@ -14,9 +14,16 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { CacheModule } from './common/cache/cache.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
+    //Event 
+    EventEmitterModule.forRoot({
+        wildcard: true,
+        delimiter: '.',
+        maxListeners: 10,
+    }), 
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,

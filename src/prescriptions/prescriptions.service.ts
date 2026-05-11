@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -10,7 +11,7 @@ import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class PrescriptionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private eventEmitter: EventEmitter2) {}
 
   async createPrescription(
     doctorId: string,
@@ -56,8 +57,16 @@ export class PrescriptionsService {
       },
     });
 
-    // TODO: Send notification to patient
-    // await this.notificationsService.sendNewPrescriptionNotification(connection.patient.userId, prescription);
+    // Send notification to patient
+    this.eventEmitter.emit('notification.trigger', {
+      userId: connection.patient.userId,
+      type: 'NEW_PRESCRIPTION',
+      data: {
+        prescriptionId: prescription.id,
+        doctorName: `${prescription.doctor.user.firstName} ${prescription.doctor.user.lastName}`,
+        actionUrl: `/prescriptions/${prescription.id}`,
+      },
+    });
 
     return {
       message: 'Prescription created successfully',

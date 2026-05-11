@@ -98,7 +98,7 @@ describe('QrService', () => {
       const result = await service.generateConnectionQr(doctorId, dto);
 
       expect(result.token).toBe('token-123');
-      expect(result.doctor.name).toBe('John Doe');
+      expect((result.doctor as any)?.name).toBe('John Doe');
       expect(mockPrismaService.qrToken.create).toHaveBeenCalled();
     });
 

@@ -15,23 +15,20 @@ import {
   QrConnectionResponseDto,
   QrTokenResponseDto,
 } from './dto/qr-response.dto';
-import { ConfigService } from '@nestjs/config';
-import { userInclude } from '../common/selects/include.utils';
 import { QrProvider } from './qr.provider';
 import { ConnectionType } from '@prisma/client';
 import { ActiveQrItemDto } from './dto/active-qr-list.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
-import { NotificationsService } from 'src/notifications/notifications.service';
 import { AuthUser } from 'src/auth/interfaces/request-with-user.interface';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class QrService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
     private readonly qrProvider: QrProvider,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
   private userIncludeNotification = {
     user: {
@@ -179,17 +176,16 @@ export class QrService {
       },
     });
 
-    // ✅ Send notifications
-    await this.notificationsService.notifyDoctorNewConnection(
-      doctor.userId,
-      `${patient.user.firstName} ${patient.user.lastName}`,
-      doctor.user.email,
-    );
-    await this.notificationsService.notifyPatientConnectionSuccess(
-      patient.userId,
-      `${doctor.user.firstName} ${doctor.user.lastName}`,
-      patient.user.email,
-    );
+   
+
+    this.eventEmitter.emit('notification.trigger', {
+      userId: doctor.user.id,
+      type: NotificationType.NEW_CONNECTION,
+      data: {
+        senderId: patient.id,
+        senderName: `${patient.user.firstName} ${patient.user.lastName}`,
+      },
+    });
 
     await this.prisma.qrToken.update({
       where: { id: qrToken.id },
