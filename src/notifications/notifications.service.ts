@@ -116,8 +116,25 @@ export class NotificationsService {
   // --- Event Listeners (Decoupling) ---
   // دلوقتي الموديلات التانية بس بـ "ترمي" Event والخدمة دي بتلقطه وتنفذه
 
+  // Backward-compatible listener used by unit tests
+  async handleConnectionAccepted(payload: {
+    userId: string;
+    type: NotificationType | string;
+    doctorEmail: string;
+  }) {
+    return this.createNotification({
+      userId: payload.userId,
+      type: payload.type as any,
+      metadata: {
+        doctorEmail: payload.doctorEmail,
+        actionUrl: '/doctor/profile',
+        targetType: 'doctor',
+      } as any,
+    } as any);
+  }
+
   @OnEvent('notification.trigger')
-  async handleNotificationTrigger(payload: { userId: string, type: NotificationType, data: any }) {
+  async handleNotificationTrigger(payload: { userId: string; type: NotificationType; data: any }) {
     return this.createNotification({
       userId: payload.userId,
       type: payload.type,

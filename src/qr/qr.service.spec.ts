@@ -9,7 +9,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+// eslint-disable-next-line import/order
 import { QrTokenType } from './dto/generate-qr.dto';
+// eslint-disable-next-line import/order
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('QrService', () => {
   let service: QrService;
@@ -57,6 +60,7 @@ describe('QrService', () => {
         { provide: ConfigService, useValue: mockConfigService },
         { provide: QrProvider, useValue: mockQrProvider },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: EventEmitter2, useValue: { emit: jest.fn(), on: jest.fn(), off: jest.fn() } },
       ],
     }).compile();
 
@@ -224,7 +228,13 @@ describe('QrService', () => {
       const result = await service.scanAndConnect(patientId, scanDto);
 
       expect(result.connectionId).toBe('conn-1');
-      expect(mockNotificationsService.notifyDoctorNewConnection).toHaveBeenCalled();
+
+      // Implementation emits notification.trigger events via EventEmitter2
+      expect((service as any).eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.trigger',
+        expect.objectContaining({ type: expect.any(String) }),
+      );
+
       expect(mockPrismaService.qrToken.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ isUsed: true }) }),
       );

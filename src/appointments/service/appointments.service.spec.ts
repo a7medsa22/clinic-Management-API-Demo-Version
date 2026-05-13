@@ -4,6 +4,7 @@ import { AppointmentsService } from './appointments.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SlotGeneratorService } from './slot-generator.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AppointmentStatus } from '@prisma/client';
 import { AppointmentRefundPolicy } from '../policies/appointment-refund.policy';
 
@@ -38,6 +39,7 @@ describe('AppointmentsService', () => {
         { provide: PrismaService, useValue: prismaMock },
         { provide: SlotGeneratorService, useValue: slotGeneratorMock },
         { provide: NotificationsService, useValue: notificationsMock },
+        { provide: EventEmitter2, useValue: { emit: jest.fn(), on: jest.fn(), off: jest.fn() } },
       ],
     }).compile();
 
@@ -163,11 +165,16 @@ describe('AppointmentsService', () => {
       });
 
       expect(prismaMock.appointment.create).toHaveBeenCalled();
-      expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+
+      // service emits notification.trigger via EventEmitter2
+      expect((service as any).eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.trigger',
         expect.objectContaining({
           userId: 'doc_1',
+          type: expect.any(String),
         }),
       );
+
       expect(result).toEqual(
         expect.objectContaining({
           id: 'app_1',
@@ -189,17 +196,25 @@ describe('AppointmentsService', () => {
         status: AppointmentStatus.CONFIRMED,
         doctorId: 'doc_1',
         startTime,
+        // service.confirmAppointment reads updateAppoinment.patient.user.*
+        patient: { user: { firstName: 'P', lastName: 'T' } },
       });
 
       const result = await service.confirmAppointment(appointmentId, patientId);
 
       expect(prismaMock.appointment.update).toHaveBeenCalled();
-      expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+
+      expect((service as any).eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.trigger',
         expect.objectContaining({
           userId: 'doc_1',
           type: expect.any(String),
+          data: expect.objectContaining({
+            appointmentId: appointmentId,
+          }),
         }),
       );
+
       expect(result).toEqual(
         expect.objectContaining({
           id: appointmentId,
@@ -300,11 +315,14 @@ describe('AppointmentsService', () => {
       const result = await service.cancelAppointment(appointmentId, userId, { reason: '  too late  ' } as any);
 
       expect(prismaMock.appointment.update).toHaveBeenCalled();
-      expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+
+      // service.cancelAppointment emits notification.trigger via EventEmitter2
+      expect((service as any).eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.trigger',
         expect.objectContaining({
           userId: 'patient_1',
           type: expect.any(String),
-          metadata: expect.objectContaining({
+          data: expect.objectContaining({
             appointmentId,
             refundEligible: expectedRefund.eligible,
           }),
